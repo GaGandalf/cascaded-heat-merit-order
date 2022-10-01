@@ -1,0 +1,73 @@
+{
+      "name": "Testfactory",
+      "location": {
+            "name": "factoryTestLocation",
+            "latitude": 12.01,
+            "longitude": 13.02
+      },
+      "dhs": {
+            "name": "TestDHS",
+            "location": {
+                  "name": "testlocation",
+                  "latitude": 12,
+                  "longitude": 13
+            },
+            "minimum_feed_in_temperature": 313.15,
+            "maximum_feed_in_temperature": 393.15
+      },
+      "networks": [
+            {
+                  "name": "Testing IH Network",
+                  "operating_temperature": 100,
+                  "internal": true,
+                  "is_cooling_network": false,
+                  "heat_sources": [
+                        {
+                              "type": "HeatSource",
+                              "name": "Testing Waste Heat Source",
+                              "internal": true,
+                              "heat_supply": 500,
+                              "price": 0
+                        }
+                  ],
+                  "heat_demands": [
+                        {
+                              "type": "HeatDemand",
+                              "name": "IH Testing Demand",
+                              "internal": true,
+                              "heat_demand": 300,
+                              "price": 0
+                        }
+                  ],
+                  "cooling_cost": 0
+            },
+            {
+                  "name": "Testing RH Network",
+                  "operating_temperature": 80,
+                  "internal": true,
+                  "is_cooling_network": false,
+                  "heat_sources": [],
+                  "heat_demands": [
+                        {
+                              "type": "HeatDemand",
+                              "name": "RH Testing Demand",
+                              "internal": true,
+                              "heat_demand": 100,
+                              "price": 0
+                        }
+                  ],
+                  "cooling_cost": 0
+            }
+      ],
+      "network_connectors": [
+            {
+                  "name": "IH to RH testing Heat Exchanger",
+                  "heat_sink": "Testing RH Network",
+                  "heat_source": "Testing IH Network",
+                  "max_throughput": null,
+                  "price": 0,
+                  "efficiency": 1,
+                  "type": "NetworkConnector"
+            }
+      ]
+}

@@ -1,0 +1,14 @@
+venv
+*.egg-info
+.tox
+.idea
+.coverage
+.pytest_cache
+
+/res
+/data
+
+scripts
+clone*.log
+
+__pycache__
