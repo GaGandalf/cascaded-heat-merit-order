@@ -31,6 +31,7 @@ class Factory:
         self.grid_size = grid_size
         self.mo = None
 
+        self.save_connections = False
         self.persistent_networks = copy.deepcopy(self.networks)
 
     def __str__(self):
@@ -123,8 +124,13 @@ class Factory:
                             supply_system.update_supply_at_timestamp(timestamp=timestamp,
                                                                      add=(-cheapest_merit.original_supply))
 
-            # Do not save the used connections
-            cheapest_merit.connections = None
+            # Do not save the used connections#
+            if self.save_connections:
+                if cheapest_merit.connections:
+                    for i, connection in enumerate(cheapest_merit.connections):
+                        cheapest_merit.connections[i] = f"{connection['heat_source']}_{connection['heat_sink']}"
+            else:
+                cheapest_merit.connections = None
 
             if not self.mo:
                 self.mo = [cheapest_merit]

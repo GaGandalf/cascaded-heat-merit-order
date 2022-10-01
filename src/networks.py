@@ -101,6 +101,7 @@ class HeatNetwork:
 
                             efficiencies.append(input_connection["efficiency"])
 
+                        child_smo.sort(key=lambda x: x.price)
                         child_smo = filter_child_smo(child_smo, limit=input_connection["max_throughput"])
                         register_connection_usage(child_smo, heat_source=input_source, heat_sink=self,
                                                   connection_type="HEX", efficiencies=efficiencies)
@@ -125,8 +126,10 @@ class HeatNetwork:
                             supply_merit.supply = supply_merit.supply + supply_merit.supply / cop
 
                             efficiencies.append(1 + 1 / cop)
-
+                        child_smo.sort(key=lambda x: x.price)
                         child_smo = filter_child_smo(child_smo, limit=input_connection["max_throughput"])
+
+
                         register_connection_usage(child_smo, heat_source=input_source, heat_sink=self,
                                                   connection_type="HP", efficiencies=efficiencies)
 

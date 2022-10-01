@@ -4,7 +4,7 @@ import pandas as pd
 
 
 class DHS:
-    def __init__(self, name: str, location: Location, min_temp: float = celsius_to_kelvin(40),
+    def __init__(self, name: str, location: Location, min_temp: float = celsius_to_kelvin(60),
                  max_temp: float = celsius_to_kelvin(120), demand_profile: pd.Series = None,
                  heat_sources=None, heat_demands=None, use_demand_profile=True
                  ):
