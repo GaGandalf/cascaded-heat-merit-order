@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import List
 
+import pandas as pd
+
 from energy_converters import HeatSource, HeatDemand
 from merits import DemandMerit, SupplyMerit, Merit
 from utils import find_electricity_price, find_electricity_co2_equivalence
@@ -31,6 +33,7 @@ class HeatNetwork:
 
         self.is_cooling_network = is_cooling_network
         self.cooling_cost = cooling_cost
+        self.coolers = None
 
     def __str__(self):
         return self.name
@@ -187,6 +190,14 @@ class HeatNetwork:
                 )
             self.match_supply_and_demand(dmo, smo)
 
+    def get_cooling_cost(self, timestamp):
+        # Do we have coolers available?
+        if self.coolers:
+            # Assemble the cooling cost
+
+
+        elif isinstance(self.cooling_cost, pd.Series):
+            return self.cooling_cost[timestamp]
 
 def get_internal_smo(network: HeatNetwork, timestamp: datetime = datetime.now()):
     internal_smo = []

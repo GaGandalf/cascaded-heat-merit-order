@@ -5,7 +5,7 @@ import pandas as pd
 
 from fuel import Fuel
 from merits import DemandMerit, SupplyMerit
-from utils import find_fuel_price, find_electricity_price
+from utils import find_fuel_price, find_electricity_price, find_ambient_temperature
 
 
 class EnergyConverter:
@@ -247,6 +247,31 @@ class CHP(HeatSource):
             fuel_enthalpy = self.electricity_supply / self.electrical_efficiency
             return fuel_enthalpy * self.thermal_efficiency
 
+
+class Cooler(EnergyConverter):
+    def __init__(self, name: str, internal: bool = True, cooling_cost: float = 0,
+                 cooling_capacity=None, ambient: bool = False, efficiency = 1):
+        EnergyConverter.__init__(self, name, internal)
+        self.cooling_capacity = cooling_capacity
+        self.ambient = ambient
+        self.cooling_cost = cooling_cost
+        self.efficiency = efficiency
+
+    def get_cooling_cost(self, timestamp: datetime = datetime.now()):
+
+
+        if self.ambient:
+            ambient_temperature = find_ambient_temperature(timestamp)
+            electricity_price = find_electricity_price(timestamp)
+
+            """eeg =
+            cooling_cost ="""
+
+        elif(isinstance(self.cooling_cost), pd.Series):
+            return self.cooling_cost[timestamp]
+
+        else:
+            return self.cooling_cost
 
 def get_boiler_price(fuel_price_reference, efficiency):
     base_price = 0.08 / efficiency  # [(€/s) / kW]

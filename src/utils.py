@@ -24,10 +24,26 @@ def find_electricity_price(timestamp: datetime, electricity_price_reference=None
         try:
             return electricity_price_reference.loc[timestamp]
         except KeyError as ke:
-            logging.warning(f"Electricity price not found at {timestamp}. Using mean.")
+            logging.warning(f"Electricity price not found at {timestamp}. Using mean from reference.")
             return electricity_price_reference.mean()
-    default_price = 0.2
-    return default_price
+    else:
+        try:
+            reference = globals()['reference']
+            return reference['electricity_price'][timestamp]
+
+        except KeyError:
+            default_price = 0.2
+            return default_price
+
+
+def find_ambient_temperature(timestamp: datetime):
+    try:
+        reference = globals()['reference']
+        return reference['t_ambient'][timestamp]
+
+    except KeyError:
+        default_price = 0.2
+        return default_price
 
 
 def find_electricity_co2_equivalence(timestamp: datetime):
@@ -52,3 +68,17 @@ def datetime_range_gen(start: datetime, end: datetime, delta: timedelta):
     while current < end:
         yield current
         current += delta
+
+
+def set_up_merit_order_calculation():
+    """
+    This function loads reference data into global variables to be accessible for energy-converters and network-
+    connectors during the merit-order calculation.
+    """
+    try:
+        reference_data = pd.read_csv("data/reference.csv")
+        globals()['reference'] = reference_data
+
+    except FileNotFoundError:
+        logging.warning("Reference data not found! Using defaults.")
+        logging.debug("Reference data should be placed in root/data/reference.csv")

@@ -4,7 +4,7 @@ Tool for calculating a factory-wide merit order of heat-flows of industrial ener
 
 ### ToDo
 
-- [ ] Complex Factory testcase
+- [x] Complex Factory testcase
 - [ ] Time variant cooling costs
 - [ ] Stepwise cooling costs
 - [ ] Testcase DHS with SupplyStructure
