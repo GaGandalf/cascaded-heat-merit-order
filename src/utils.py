@@ -3,6 +3,13 @@ from datetime import datetime, timedelta
 import pandas as pd
 import logging
 
+reference_df = None
+
+def load_reference(filepath_or_buffer):
+    global reference_df
+    reference_df = pd.read_csv("data/reference_test.csv", sep=";", header=0, index_col=0, parse_dates=True)
+
+
 
 def celsius_to_kelvin(t: float):
     return t + 273.15
@@ -27,34 +34,34 @@ def find_electricity_price(timestamp: datetime, electricity_price_reference=None
             logging.warning(f"Electricity price not found at {timestamp}. Using mean from reference.")
             return electricity_price_reference.mean()
     else:
-        try:
-            reference = globals()['reference']
-            return reference['electricity_price'][timestamp]
-
-        except KeyError:
-            default_price = 0.2
-            return default_price
-
-
-def find_ambient_temperature(timestamp: datetime):
-    try:
-        reference = globals()['reference']
-        return reference['t_ambient'][timestamp]
-    except KeyError:
+        if isinstance(reference_df, pd.DataFrame):
+            try:
+                return reference_df['electricity_price'][timestamp]
+            except KeyError:
+                logging.debug("No electricity prices in reference found! Using default value.")
         default_price = 0.2
         return default_price
 
 
+def find_ambient_temperature(timestamp: datetime) -> float:
+    if isinstance(reference_df, pd.DataFrame):
+        try:
+            return reference_df['t_ambient'][timestamp]
+        except KeyError:
+            logging.debug("Reference does not contain temperature information. Using default.")
+    t_ambient = celsius_to_kelvin(20)
+    return t_ambient
+
+
 def find_electricity_co2_equivalence(timestamp: datetime):
-    # ToDo: Implementation of CO2 Equivalence of electricity in relationship to the electricity supply mix on site
     return 0.478
 
 
 def datetime_range(start: datetime, end: datetime, delta: timedelta):
-    return [dt for dt in (datetime_range_gen(start, end, delta))]
+    return [dt for dt in (datetime_range_generator(start, end, delta))]
 
 
-def datetime_range_gen(start: datetime, end: datetime, delta: timedelta):
+def datetime_range_generator(start: datetime, end: datetime, delta: timedelta):
     """
     source: https://stackoverflow.com/questions/39298054/generating-15-minute-time-interval-array-in-python
 

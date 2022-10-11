@@ -89,12 +89,9 @@ class HeatNetwork:
                     if input_connection["source"].operating_temperature > self.operating_temperature:
                         efficiencies = []
                         for supply_merit in child_smo:
-                            # Apply inflicted cooling cost in self
-                            inflicted_cooling_cost = self.get_cooling_cost(timestamp, supply_merit.supply)
-
-                            supply_merit.price = supply_merit.price + self.cooling_cost
                             # Apply avoided cooling cost in child-network
-                            supply_merit.price = supply_merit.price - input_source.cooling_cost
+                            avoided_cooling_cost = input_source.get_cooling_cost(timestamp, supply_merit.supply)
+                            supply_merit.price = supply_merit.price - avoided_cooling_cost
                             # Multiplying the price per KW/h with the efficiency gets us the specific price in the
                             # mother network
                             supply_merit.price = supply_merit.price / input_connection["efficiency"]
@@ -104,6 +101,9 @@ class HeatNetwork:
                             # be applicable for heat-exchangers though
                             supply_merit.price = supply_merit.price + input_connection["penalty"]
                             supply_merit.supply = supply_merit.supply * input_connection["efficiency"]
+
+                            inflicted_cooling_cost = self.get_cooling_cost(timestamp, supply_merit.supply)
+                            supply_merit.price = supply_merit.price + inflicted_cooling_cost
 
                             efficiencies.append(input_connection["efficiency"])
 
@@ -116,8 +116,8 @@ class HeatNetwork:
                     if input_connection["source"].operating_temperature < self.operating_temperature:
                         efficiencies = []
                         for supply_merit in child_smo:
-                            supply_merit.price = supply_merit.price + self.cooling_cost
-                            supply_merit.price = supply_merit.price - input_source.cooling_cost
+                            avoided_cooling_cost = input_source.get_cooling_cost(timestamp, supply_merit.supply)
+                            supply_merit.price = supply_merit.price - avoided_cooling_cost
                             cop = get_cop(input_connection["source"].operating_temperature, self.operating_temperature,
                                           input_connection["efficiency"])
 
@@ -131,10 +131,11 @@ class HeatNetwork:
                             # Adjust supply
                             supply_merit.supply = supply_merit.supply + supply_merit.supply / cop
 
+                            inflicted_cooling_cost = self.get_cooling_cost(timestamp, supply_merit.supply)
+                            supply_merit.price = supply_merit.price + inflicted_cooling_cost
                             efficiencies.append(1 + 1 / cop)
                         child_smo.sort(key=lambda x: x.price)
                         child_smo = filter_child_smo(child_smo, limit=input_connection["max_throughput"])
-
 
                         register_connection_usage(child_smo, heat_source=input_source, heat_sink=self,
                                                   connection_type="HP", efficiencies=efficiencies)
@@ -203,40 +204,29 @@ class HeatNetwork:
                 # Use the cheapest cooler first
                 cooling_capacities = []
                 for cooler in self.coolers:
-                    cost = cooler.get_cooling_cost(self.cooling_cost, timestamp)
+                    cost = cooler.get_cooling_cost(self.operating_temperature, timestamp)
                     cooling_capacities.append({"name": cooler.name, "capacity": cooler.cooling_capacity,
                                                "cost": cost})
 
                 cooling_capacities.sort(key=lambda x: x["cost"])
                 cost = 0
-
-                """
-                1200kw
-                
-                mit 1000kW @ 5 €/kW und 1000kW @ 10 €/kW Kapazitäten
-                
-                Preis ist : 200kW@10€ + 1000KW@5€ = 5000 * 2000 = 7000
-                
-                
-                """
                 remaining_cooling_amount = cooling_amount
                 for cooling_capacity in cooling_capacities:
                     if remaining_cooling_amount == 0:
                         break
-
-                    if cooling_capacity["capacity"] <= cooling_amount:
+                    if cooling_capacity["capacity"] < cooling_amount:
                         cost = cost + cooling_capacity["capacity"] * cooling_capacity["cost"]
                         remaining_cooling_amount = remaining_cooling_amount - cooling_amount["capacity"]
-
                     else:
-                        cost = cost + remaining_cooling_amount * cooling_capacity
-
-                # What if we use only a factorional amount of the supplymerit???
-
+                        cost = cost + remaining_cooling_amount * cooling_capacity["cost"]
+                return cost / cooling_amount
             elif isinstance(self.cooling_cost, pd.Series):
                 return self.cooling_cost[timestamp]
+            else:
+                return self.cooling_cost
         else:
             return 0
+
     def get_demand(self, timestamp):
         demand = 0
         if self.heat_demands:
@@ -293,7 +283,7 @@ def register_connection_usage(child_smo: List[SupplyMerit], heat_source: HeatNet
 def make_connection_usage_dict_element(heat_source: HeatNetwork, heat_sink: HeatNetwork, transfer_amount: (int, float),
                                        connection_type: str, efficiency: float) -> dict:
     return {"heat_source": heat_source, "heat_sink": heat_sink, "transfer_amount": transfer_amount, "connection_type":
-            connection_type, "efficiency": efficiency}
+        connection_type, "efficiency": efficiency}
 
 
 def get_cop(low_temp, high_temp, efficiency) -> float:

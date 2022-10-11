@@ -1,5 +1,7 @@
 import json
 
+import pandas as pd
+
 from dhs import DHS
 from energy_converters import HeatSource, Boiler, HeatDemand
 from factory import Factory
@@ -9,16 +11,8 @@ from network_connectors import NetworkConnector, HeatExchanger, HeatPump
 from networks import HeatNetwork
 
 
-def load_supply_timeseries(column_name: str):
-    raise NotImplementedError
-
-
-def load_price_timeseries(column_name: str):
-    raise NotImplementedError
-
-
-def load_fuel_price_reference(column_name: str):
-    raise NotImplementedError
+def load_from_reference(column_name: str, reference_df: pd.DataFrame):
+    return reference_df[column_name]
 
 
 def location_dict_to_location_object(location_dict: dict) -> Location:
@@ -26,27 +20,27 @@ def location_dict_to_location_object(location_dict: dict) -> Location:
                     longitude=location_dict["longitude"])
 
 
-def get_price_and_supply_data(heat_source: dict):
+def get_price_and_supply_data(heat_source: dict, reference_df: pd.DataFrame = None):
     if type(heat_source['heat_supply']) == str:
-        heat_supply = load_supply_timeseries(heat_source['heat_supply'])
+        heat_supply = load_from_reference(heat_source['heat_supply'], reference_df)
     else:
         heat_supply = heat_source['heat_supply']
 
     if type(heat_source['price']) == str:
-        price = load_price_timeseries(heat_source['price'])
+        price = load_from_reference(heat_source['price'], reference_df)
     else:
         price = heat_source['price']
     return heat_supply, price
 
 
-def get_price_and_demand_data(heat_demand: dict):
+def get_price_and_demand_data(heat_demand: dict, reference_df: pd.DataFrame = None):
     if type(heat_demand['heat_demand']) == str:
-        demand = load_supply_timeseries(heat_demand['heat_demand'])
+        demand = load_from_reference(heat_demand['heat_demand'], reference_df)
     else:
         demand = heat_demand['heat_demand']
 
     if type(heat_demand['price']) == str:
-        price = load_price_timeseries(heat_demand['price'])
+        price = load_from_reference(heat_demand['price'], reference_df)
     else:
         price = heat_demand['price']
     return demand, price
@@ -57,10 +51,10 @@ def fuel_dict_to_fuel_object(fuel_dict: dict) -> Fuel:
                 calorific_value=fuel_dict['calorific_value'])
 
 
-def heat_source_dict_to_heat_source_object(heat_source: dict):
+def heat_source_dict_to_heat_source_object(heat_source: dict, reference_df: pd.DataFrame = None):
     if heat_source['type'] == "HeatSource":
         # Load supply and price data here
-        heat_supply, price = get_price_and_supply_data(heat_source)
+        heat_supply, price = get_price_and_supply_data(heat_source, reference_df)
 
         return HeatSource(name=heat_source['name'], internal=heat_source['internal'], heat_supply=heat_supply,
                           price=price)
@@ -79,21 +73,21 @@ def heat_source_dict_to_heat_source_object(heat_source: dict):
         raise NotImplementedError
 
 
-def heat_demand_dict_to_heat_demand_object(heat_demand: dict) -> HeatDemand:
-    demand, price = get_price_and_demand_data(heat_demand)
+def heat_demand_dict_to_heat_demand_object(heat_demand: dict, reference_df: pd.DataFrame = None) -> HeatDemand:
+    demand, price = get_price_and_demand_data(heat_demand, reference_df)
     return HeatDemand(name=heat_demand["name"], heat_demand=demand, price=price, internal=heat_demand['internal'])
 
 
-def network_dict_to_network_object(network_dict: dict) -> HeatNetwork:
+def network_dict_to_network_object(network_dict: dict, reference_df: pd.DataFrame=None) -> HeatNetwork:
     heat_sources = []
     if network_dict['heat_sources']:
         for heat_source_dict in network_dict['heat_sources']:
-            heat_sources.append(heat_source_dict_to_heat_source_object(heat_source_dict))
+            heat_sources.append(heat_source_dict_to_heat_source_object(heat_source_dict, reference_df))
 
     heat_demands = []
     if network_dict['heat_demands']:
         for heat_demand_dict in network_dict['heat_demands']:
-            heat_demands.append(heat_demand_dict_to_heat_demand_object(heat_demand_dict))
+            heat_demands.append(heat_demand_dict_to_heat_demand_object(heat_demand_dict, reference_df))
 
     return HeatNetwork(name=network_dict['name'], operating_temperature=network_dict['operating_temperature'],
                        internal=network_dict['internal'], is_cooling_network=network_dict['is_cooling_network'],
@@ -127,11 +121,11 @@ def network_connector_dict_to_network_connector_object(network_connector_dict: d
             f"Type {network_connector_dict['type']} found for {network_connector_dict['name']} not defined.")
 
 
-def factory_dict_to_factory_object(factory_dict: dict) -> Factory:
+def factory_dict_to_factory_object(factory_dict: dict, reference_df: pd.DataFrame = None) -> Factory:
     networks = []
     if factory_dict['networks']:
         for network_dict in factory_dict['networks']:
-            networks.append(network_dict_to_network_object(network_dict))
+            networks.append(network_dict_to_network_object(network_dict, reference_df))
 
     dhs_dict = factory_dict["dhs"]
     dhs = DHS(name=dhs_dict["name"], location=location_dict_to_location_object(dhs_dict["location"]),

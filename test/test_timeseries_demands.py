@@ -48,7 +48,6 @@ class TestTimeSeriesMeritOrder(unittest.TestCase):
 
     def test_dhs_demand(self):
         """
-
         :return:
         """
         rh_name = "RH Testing Network"

@@ -38,6 +38,7 @@ class Factory:
         self.persistent_networks = copy.deepcopy(self.networks)
 
         self.df = df
+
     def __str__(self):
         return self.name
 
@@ -85,7 +86,7 @@ class Factory:
 
             if not cheapest_merit:
                 # If no merit could be found, terminate the process
-                #self.networks = self.persistent_networks
+                # self.networks = self.persistent_networks
                 return
 
             for i, network in enumerate(self.networks):
@@ -236,7 +237,8 @@ class Factory:
             if network.internal and not network.is_cooling_network:
                 if network.heat_demands:
                     for heat_demand in network.heat_demands:
-                        remaining_internal_demand = remaining_internal_demand + heat_demand.get_demand(self.mo_timestamp)
+                        remaining_internal_demand = remaining_internal_demand + heat_demand.get_demand(
+                            self.mo_timestamp)
         return remaining_internal_demand
 
     def remaining_cooling_demand(self) -> float:
@@ -267,8 +269,8 @@ class Factory:
             print("Please execute the merit order calculation before calculating the internal cost!")
             raise AttributeError
 
-
-
+    def reset_networks(self):
+        self.networks = copy.deepcopy(self.persistent_networks)
 
 
 def update_network_connections(networks: List[HeatNetwork], source_network_name: str, sink_network_name: str,

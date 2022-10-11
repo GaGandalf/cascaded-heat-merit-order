@@ -1,6 +1,8 @@
 import json
 from typing import List
 
+import pandas as pd
+
 from dhs import DHS
 from energy_converters import Boiler, CHP, HeatSource, HeatDemand, EnergyConverter
 from factory import Factory
@@ -26,7 +28,7 @@ def encode_fuel(fuel: Fuel) -> dict:
 
 
 def make_heat_reference_string(energy_converter: EnergyConverter) -> str:
-    return f"heat_{energy_converter.name}"
+    return f"heat_{energy_converter.name.replace(' ', '_')}"
 
 
 def make_electricity_reference_string(heat_source: HeatSource) -> str:
@@ -48,12 +50,12 @@ def make_electricity_price_reference_string(heat_source: HeatSource) -> str:
 def encode_boiler(boiler: Boiler) -> dict:
     encoded_fuel = encode_fuel(boiler.fuel)
 
-    if type(boiler.supply) == List:
+    if type(boiler.supply) == pd.Series:
         heat_supply_ref = make_heat_reference_string(boiler)
     else:
         heat_supply_ref = boiler.supply
 
-    if type(boiler.price) == List:
+    if type(boiler.price) == pd.Series:
         price_ref = make_price_reference_string(boiler)
     else:
         price_ref = boiler.price
@@ -73,12 +75,12 @@ def encode_boiler(boiler: Boiler) -> dict:
 def encode_chp(chp: CHP) -> dict:
     encoded_fuel = encode_fuel(chp.fuel)
 
-    if type(chp.supply) == List:
+    if type(chp.supply) == pd.Series:
         heat_supply_ref = make_heat_reference_string(chp)
     else:
         heat_supply_ref = chp.supply
 
-    if type(chp.electricity_supply) == List:
+    if type(chp.electricity_supply) == pd.Series:
         electricity_supply_ref = make_electricity_reference_string(chp)
     else:
         electricity_supply_ref = chp.electricity_supply
@@ -102,12 +104,12 @@ def encode_chp(chp: CHP) -> dict:
 
 
 def encode_heat_source(heat_source: HeatSource) -> dict:
-    if type(heat_source.supply) == List:
+    if type(heat_source.supply) == pd.Series:
         heat_supply_ref = make_heat_reference_string(heat_source)
     else:
         heat_supply_ref = heat_source.supply
 
-    if type(heat_source.price) == List:
+    if type(heat_source.price) == pd.Series:
         price_ref = make_price_reference_string(heat_source)
     else:
         price_ref = heat_source.price
@@ -122,12 +124,12 @@ def encode_heat_source(heat_source: HeatSource) -> dict:
 
 
 def encode_heat_demand(heat_demand: HeatDemand) -> dict:
-    if type(heat_demand.demand) == List:
+    if type(heat_demand.demand) == pd.Series:
         heat_demand_ref = make_heat_reference_string(heat_demand)
     else:
         heat_demand_ref = heat_demand.demand
 
-    if type(heat_demand.price) == List:
+    if type(heat_demand.price) == pd.Series:
         price_ref = make_price_reference_string(heat_demand)
     else:
         price_ref = heat_demand.price

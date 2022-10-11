@@ -109,21 +109,21 @@ class TestComplexFactory(unittest.TestCase):
                 name_sink="Heat Demand RH",
                 supply=750.0,
                 original_supply=566.9254310641492,
-                price=-26.871838239265102
+                price=-26.407700231277403
             ),
             Merit(
                 name_source="Cooling Demand 2",
                 name_sink="Test DHS",
                 supply=859.3879606676228,
                 original_supply=433.07456893585083,
-                price=-17.847892159510067
+                price=-17.5384668208516
             ),
             Merit(
                 name_source="Cooling Demand 1",
                 name_sink="Test DHS",
                 supply=1120.0526692439878,
                 original_supply=622.1944170388671,
-                price=-3.244128558922839
+                price=-2.7755575615628914e-17
             ),
             Merit(
                 name_source="CHP 1",

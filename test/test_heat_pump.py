@@ -6,7 +6,7 @@ from energy_converters import HeatSource, HeatDemand
 from factory import Factory
 from location import Location
 from merits import Merit
-from network_connectors import NetworkConnector, HeatPump
+from network_connectors import HeatPump
 from networks import HeatNetwork, apply_specific_electricity_costs
 from utils import find_electricity_price
 

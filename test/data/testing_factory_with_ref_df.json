@@ -26,7 +26,7 @@
                               "type": "HeatSource",
                               "name": "Testing Waste Heat Source",
                               "internal": true,
-                              "heat_supply": 500,
+                              "heat_supply": "heat_Testing_Waste_Heat_Source",
                               "price": 0
                         }
                   ],
@@ -35,7 +35,7 @@
                               "type": "HeatDemand",
                               "name": "IH Testing Demand",
                               "internal": true,
-                              "heat_demand": 300,
+                              "heat_demand": "heat_IH_Testing_Demand",
                               "price": 0
                         }
                   ],
@@ -52,7 +52,7 @@
                               "type": "HeatDemand",
                               "name": "RH Testing Demand",
                               "internal": true,
-                              "heat_demand": 100,
+                              "heat_demand": "heat_RH_Testing_Demand",
                               "price": 0
                         }
                   ],
