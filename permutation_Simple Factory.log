@@ -1,0 +1,15 @@
+Network Connector Permutation for Simple Factory
+
+Parameters:
+Number of connectors to be added: 3
+Heat networks in Simple Factory: 3
+Existing network connections: 1
+Possible connections: 5
+Possible combinations: 10
+
+No demand profile for DHS TestDHS found.
+Using default demand of 100 MW
+Estimated runtime: 0.3s
+Starting at 2022-10-06 16:01:52.405596
+
+Finished at 2022-10-06 16:01:52.440503

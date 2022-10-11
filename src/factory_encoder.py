@@ -197,9 +197,10 @@ class FactoryEncoder(json.JSONEncoder):
             encoded_networks.append(encoded_network)
 
         encoded_network_connectors = []
-        for network_connector in factory.network_connectors:
-            encoded_network_connector = encode_network_connector(network_connector)
-            encoded_network_connectors.append(encoded_network_connector)
+        if factory.network_connectors:
+            for network_connector in factory.network_connectors:
+                encoded_network_connector = encode_network_connector(network_connector)
+                encoded_network_connectors.append(encoded_network_connector)
 
         encoded_factory_location = encode_location(factory.location)
 

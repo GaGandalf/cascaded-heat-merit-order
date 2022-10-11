@@ -32,7 +32,7 @@ class NetworkConnector(EnergyConverter):
 class HeatPump(NetworkConnector):
     def __init__(self, name: str,
                  heat_sink: HeatNetwork, heat_source: HeatNetwork,
-                 max_throughput: float = 1000,
+                 max_throughput: float = None,
                  efficiency=1,
                  price: float = 0):
         NetworkConnector.__init__(self, name, heat_sink=heat_sink, heat_source=heat_source,

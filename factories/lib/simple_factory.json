@@ -1,0 +1,105 @@
+{
+      "name": "Simple Factory",
+      "location": {
+            "name": "factoryTestLocation",
+            "latitude": 12.01,
+            "longitude": 13.02
+      },
+      "dhs": {
+            "name": "TestDHS",
+            "location": {
+                  "name": "testlocation",
+                  "latitude": 12,
+                  "longitude": 13
+            },
+            "minimum_feed_in_temperature": 333.15,
+            "maximum_feed_in_temperature": 393.15
+      },
+      "networks": [
+            {
+                  "name": "Cooling Network",
+                  "operating_temperature": 279.15,
+                  "internal": true,
+                  "is_cooling_network": true,
+                  "heat_sources": [
+                        {
+                              "type": "HeatSource",
+                              "name": "Cooling Demand 1",
+                              "internal": true,
+                              "heat_supply": 1500,
+                              "price": 0
+                        }
+                  ],
+                  "heat_demands": [],
+                  "cooling_cost": 0
+            },
+            {
+                  "name": "IH Heat Network",
+                  "operating_temperature": 383.15,
+                  "internal": true,
+                  "is_cooling_network": false,
+                  "heat_sources": [
+                        {
+                              "type": "HeatSource",
+                              "name": "Gas Boiler 1",
+                              "internal": true,
+                              "heat_supply": 2500,
+                              "price": 0.10666666666666667
+                        },
+                        {
+                              "type": "HeatSource",
+                              "name": "CHP 1",
+                              "internal": true,
+                              "heat_supply": 1000,
+                              "price": -2.7755575615628914e-17
+                        }
+                  ],
+                  "heat_demands": [
+                        {
+                              "type": "HeatDemand",
+                              "name": "Heat Demand IH",
+                              "internal": true,
+                              "heat_demand": 1000,
+                              "price": 0
+                        }
+                  ],
+                  "cooling_cost": 0
+            },
+            {
+                  "name": "RH Heat Network",
+                  "operating_temperature": 333.15,
+                  "internal": true,
+                  "is_cooling_network": false,
+                  "heat_sources": [
+                        {
+                              "type": "HeatSource",
+                              "name": "Pressurized Air Waste Heat",
+                              "internal": true,
+                              "heat_supply": 500,
+                              "price": 0
+                        }
+                  ],
+                  "heat_demands": [
+                        {
+                              "type": "HeatDemand",
+                              "name": "Heat Demand RH",
+                              "internal": true,
+                              "heat_demand": 1500,
+                              "price": 0
+                        }
+                  ],
+                  "cooling_cost": 0
+            }
+      ],
+      "network_connectors": [
+            {
+                  "name": "IH to RH testing Heat Exchanger",
+                  "heat_sink": "RH Heat Network",
+                  "heat_source": "IH Heat Network",
+                  "max_throughput": null,
+                  "price": 0,
+                  "efficiency": 1,
+                  "type": "HeatExchanger"
+            }
+      ]
+}

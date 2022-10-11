@@ -2,6 +2,7 @@ import copy
 import datetime
 import logging
 from typing import List
+import pandas as pd
 
 from dhs import DHS
 from energy_converters import HeatDemand
@@ -16,7 +17,8 @@ class Factory:
                  dhs: DHS,
                  networks: [HeatNetwork] = None,
                  network_connectors: [NetworkConnector] = None,
-                 grid_size=None):
+                 grid_size=None,
+                 df: pd.DataFrame = None):
 
         self.demand_curve = None
         self.supply_curve = None
@@ -30,10 +32,12 @@ class Factory:
 
         self.grid_size = grid_size
         self.mo = None
+        self.mo_timestamp = None
 
         self.save_connections = False
         self.persistent_networks = copy.deepcopy(self.networks)
 
+        self.df = df
     def __str__(self):
         return self.name
 
@@ -63,6 +67,7 @@ class Factory:
                     remaining_demand=True, initial=True):
 
         if initial:
+            self.mo_timestamp = timestamp
             self.networks = copy.deepcopy(self.persistent_networks)
             self.register_network_connections()
             self.mo = None
@@ -80,7 +85,7 @@ class Factory:
 
             if not cheapest_merit:
                 # If no merit could be found, terminate the process
-                self.networks = self.persistent_networks
+                #self.networks = self.persistent_networks
                 return
 
             for i, network in enumerate(self.networks):
@@ -149,7 +154,7 @@ class Factory:
         :param connector_efficiency:
         :param connection_network_name:
         """
-        self.disconnect_dhs()
+        self.disconnect_dhs(ignore_no_dhs=True)
         connection_network = self.find_network_by_name(connection_network_name)
         dhs = self.dhs
 
@@ -172,7 +177,8 @@ class Factory:
             dhs_network = HeatNetwork(name=dhs.name,
                                       operating_temperature=celsius_to_kelvin(dhs.minimum_feed_in_temperature),
                                       heat_sources=dhs_heat_sources,
-                                      heat_demands=dhs_heat_demand)
+                                      heat_demands=dhs_heat_demand,
+                                      internal=False)
             hts = HeatPump(name="DHS Heatpump", heat_sink=dhs.name, heat_source=connection_network_name,
                            max_throughput=connector_max_throughput, efficiency=connector_efficiency)
         else:
@@ -181,7 +187,8 @@ class Factory:
             dhs_network = HeatNetwork(name=dhs.name,
                                       operating_temperature=celsius_to_kelvin(dhs.maximum_feed_in_temperature),
                                       heat_sources=dhs_heat_sources,
-                                      heat_demands=dhs_heat_demand)
+                                      heat_demands=dhs_heat_demand,
+                                      internal=False)
             hts = HeatExchanger(name="DHS HeatExchanger", heat_sink=dhs.name, heat_source=connection_network_name,
                                 max_throughput=connector_max_throughput, efficiency=connector_efficiency)
 
@@ -196,13 +203,14 @@ class Factory:
         self.register_network_connections()
         self.persistent_networks = copy.deepcopy(self.networks)
 
-    def disconnect_dhs(self):
+    def disconnect_dhs(self, ignore_no_dhs=False):
         """
         Remove the DHS network from the networks list and remove the network connector.
         :return:
         """
         if not self.hts:
-            logging.warning("No DHS network to disconnect!")
+            if not ignore_no_dhs:
+                logging.warning("No DHS network to disconnect!")
             return
 
         for network in self.persistent_networks:
@@ -221,6 +229,46 @@ class Factory:
         if not network:
             raise KeyError
         return network
+
+    def remaining_internal_demand(self) -> float:
+        remaining_internal_demand = 0
+        for network in self.networks:
+            if network.internal and not network.is_cooling_network:
+                if network.heat_demands:
+                    for heat_demand in network.heat_demands:
+                        remaining_internal_demand = remaining_internal_demand + heat_demand.get_demand(self.mo_timestamp)
+        return remaining_internal_demand
+
+    def remaining_cooling_demand(self) -> float:
+        remaining_cooling_demand = 0
+        for network in self.networks:
+            if network.internal and network.is_cooling_network:
+                if network.heat_sources:
+                    for heat_source in network.heat_sources:
+                        remaining_cooling_demand = remaining_cooling_demand + heat_source.get_supply(self.mo_timestamp)
+
+    def cooling_cost(self):
+        cooling_cost = 0
+        for network in self.networks:
+            if network.internal and network.is_cooling_network:
+                if network.heat_sources:
+                    cooling_cost = cooling_cost + network.cooling_cost()
+
+    def internal_demand(self, timestamp=None) -> dict:
+        internal_demand = {"network": [], "demand": []}
+        for network in self.networks:
+            if network.internal:
+                internal_demand["network"].append(network.name)
+                internal_demand["demand"].append(network.get_demand(timestamp))
+        return internal_demand
+
+    def internal_cost(self):
+        if not self.mo:
+            print("Please execute the merit order calculation before calculating the internal cost!")
+            raise AttributeError
+
+
+
 
 
 def update_network_connections(networks: List[HeatNetwork], source_network_name: str, sink_network_name: str,
@@ -250,10 +298,11 @@ def update_network_connections(networks: List[HeatNetwork], source_network_name:
         for i, registered_network in enumerate(sink_network.input_connections):
             if registered_network["source"].name == source_network.name:
                 # Update if it exists, remove if the throughput is 0
-                if max_throughput < 10:
-                    sink_network.input_connections.pop(i)
-                else:
-                    sink_network.input_connections[i] = connected_source_network
+                if max_throughput:
+                    if max_throughput < 10:
+                        sink_network.input_connections.pop(i)
+                    else:
+                        sink_network.input_connections[i] = connected_source_network
                 connected_source_networks_updated = True
 
         if not connected_source_networks_updated:
@@ -265,10 +314,11 @@ def update_network_connections(networks: List[HeatNetwork], source_network_name:
         connected_sink_networks_updated = False
         for i, registered_sink_network in enumerate(source_network.connected_sink_networks):
             if registered_sink_network["sink"].name == sink_network.name:
-                if max_throughput < 10:
-                    source_network.connected_sink_networks.pop(i)
-                else:
-                    source_network.connected_sink_networks[i] = connected_sink_network
+                if max_throughput:
+                    if max_throughput < 10:
+                        source_network.connected_sink_networks.pop(i)
+                    else:
+                        source_network.connected_sink_networks[i] = connected_sink_network
                 connected_sink_networks_updated = True
 
         if not connected_sink_networks_updated:
@@ -277,8 +327,3 @@ def update_network_connections(networks: List[HeatNetwork], source_network_name:
     networks[sink_idx] = sink_network
     networks[source_idx] = source_network
     return networks
-
-
-def heat_pump_reverse_calculation(sink_network: HeatNetwork, source_network: HeatNetwork,
-                                  ):
-    pass

@@ -4,7 +4,7 @@ import pandas as pd
 import logging
 
 
-def celsius_to_kelvin(t: float | int):
+def celsius_to_kelvin(t: float):
     return t + 273.15
 
 
@@ -40,7 +40,6 @@ def find_ambient_temperature(timestamp: datetime):
     try:
         reference = globals()['reference']
         return reference['t_ambient'][timestamp]
-
     except KeyError:
         default_price = 0.2
         return default_price

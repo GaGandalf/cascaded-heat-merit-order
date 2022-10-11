@@ -34,11 +34,11 @@ class HeatSource(EnergyConverter):
         self.price = price
         self.co2_equivalent = 0
 
-    def get_merit(self, timestamp: datetime) -> SupplyMerit:
+    def get_merit(self, timestamp: datetime, internal=True) -> SupplyMerit:
         supply = self.get_supply(timestamp=timestamp)
         price = self.get_price(timestamp=timestamp)
         co2_equivalent = self.co2_equivalent
-        return SupplyMerit(self.name, supply, price, co2_equivalent=co2_equivalent)
+        return SupplyMerit(self.name, supply, price, co2_equivalent=co2_equivalent, internal=internal)
 
     def get_supply(self, timestamp):
         if isinstance(self.supply, list):
@@ -250,22 +250,21 @@ class CHP(HeatSource):
 
 class Cooler(EnergyConverter):
     def __init__(self, name: str, internal: bool = True, cooling_cost: float = 0,
-                 cooling_capacity=None, ambient: bool = False, efficiency = 1):
+                 cooling_capacity=None, ambient: bool = False, efficiency=1):
         EnergyConverter.__init__(self, name, internal)
         self.cooling_capacity = cooling_capacity
         self.ambient = ambient
         self.cooling_cost = cooling_cost
         self.efficiency = efficiency
 
-    def get_cooling_cost(self, timestamp: datetime = datetime.now()):
-
-
+    def get_cooling_cost(self, cooling_temp: float, timestamp: datetime = datetime.now()):
         if self.ambient:
             ambient_temperature = find_ambient_temperature(timestamp)
             electricity_price = find_electricity_price(timestamp)
-
-            """eeg =
-            cooling_cost ="""
+            eeg_theoretical = ambient_temperature / (ambient_temperature - cooling_temp)
+            eeg = eeg_theoretical * self.efficiency
+            eeg = round(eeg, 5)
+            return electricity_price / eeg
 
         elif(isinstance(self.cooling_cost), pd.Series):
             return self.cooling_cost[timestamp]
