@@ -1,6 +1,6 @@
 from typing import List
 
-from merits import Merit
+from cascaded_heat_merit_order.merits import Merit
 
 
 def sum_merit_order_cost(merit_order: List[Merit], internal=True) -> float:
@@ -12,7 +12,7 @@ def sum_merit_order_cost(merit_order: List[Merit], internal=True) -> float:
     return cost
 
 def sum_profit_dhs_sales(merit_order: List[Merit], dhs_price:float,
-                         sell_until_demand_met = False) -> float
+                         sell_until_demand_met = False) -> float:
     """
     We can either calculate our profits in a way were we have to fulfill acertain dhs demand
     (besicherte lieferung) for this we set sell_until_demadn_met to True. Otherwise we stop selling

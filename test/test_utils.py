@@ -1,7 +1,7 @@
 import datetime
 import unittest
 
-from utils import datetime_range
+from cascaded_heat_merit_order.utils import datetime_range
 
 
 class TestUtils(unittest.TestCase):

@@ -2,13 +2,13 @@ import json
 
 import pandas as pd
 
-from dhs import DHS
-from energy_converters import HeatSource, Boiler, HeatDemand
-from factory import Factory
-from fuel import Fuel
-from location import Location
-from network_connectors import NetworkConnector, HeatExchanger, HeatPump
-from networks import HeatNetwork
+from cascaded_heat_merit_order.dhs import DHS
+from cascaded_heat_merit_order.energy_converters import HeatSource, Boiler, HeatDemand
+from cascaded_heat_merit_order.factory import Factory
+from cascaded_heat_merit_order.fuel import Fuel
+from cascaded_heat_merit_order.location import Location
+from cascaded_heat_merit_order.network_connectors import NetworkConnector, HeatExchanger, HeatPump
+from cascaded_heat_merit_order.networks import HeatNetwork
 
 
 def load_from_reference(column_name: str, reference_df: pd.DataFrame):
@@ -128,9 +128,12 @@ def factory_dict_to_factory_object(factory_dict: dict, reference_df: pd.DataFram
             networks.append(network_dict_to_network_object(network_dict, reference_df))
 
     dhs_dict = factory_dict["dhs"]
-    dhs = DHS(name=dhs_dict["name"], location=location_dict_to_location_object(dhs_dict["location"]),
-              min_temp=dhs_dict["minimum_feed_in_temperature"],
-              max_temp=dhs_dict["maximum_feed_in_temperature"])
+    if dhs_dict:
+        dhs = DHS(name=dhs_dict["name"], location=location_dict_to_location_object(dhs_dict["location"]),
+                  min_temp=dhs_dict["minimum_feed_in_temperature"],
+                  max_temp=dhs_dict["maximum_feed_in_temperature"])
+    else:
+        dhs = None
 
     network_connectors = []
     if factory_dict["network_connectors"]:

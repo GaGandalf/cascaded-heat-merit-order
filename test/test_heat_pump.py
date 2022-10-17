@@ -1,14 +1,14 @@
 import datetime
 import unittest
 
-from dhs import DHS
-from energy_converters import HeatSource, HeatDemand
-from factory import Factory
-from location import Location
-from merits import Merit
-from network_connectors import HeatPump
-from networks import HeatNetwork, apply_specific_electricity_costs
-from utils import find_electricity_price
+from cascaded_heat_merit_order.dhs import DHS
+from cascaded_heat_merit_order.energy_converters import HeatSource, HeatDemand
+from cascaded_heat_merit_order.factory import Factory
+from cascaded_heat_merit_order.location import Location
+from cascaded_heat_merit_order.merits import Merit
+from cascaded_heat_merit_order.network_connectors import HeatPump
+from cascaded_heat_merit_order.networks import HeatNetwork, apply_specific_electricity_costs
+from cascaded_heat_merit_order.utils import find_electricity_price
 
 
 class TestHeatPump(unittest.TestCase):

@@ -3,10 +3,10 @@ from datetime import datetime
 
 import pandas as pd
 
-from energy_converters import Boiler, HeatDemand, CHP
-from fuel import Fuel
-from merits import Merit
-from networks import HeatNetwork
+from cascaded_heat_merit_order.energy_converters import Boiler, HeatDemand, CHP
+from cascaded_heat_merit_order.fuel import Fuel
+from cascaded_heat_merit_order.merits import Merit
+from cascaded_heat_merit_order.networks import HeatNetwork
 
 
 class TestEnergyConverters(unittest.TestCase):

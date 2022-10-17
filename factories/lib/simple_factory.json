@@ -40,18 +40,34 @@
                   "is_cooling_network": false,
                   "heat_sources": [
                         {
-                              "type": "HeatSource",
+                              "type": "Boiler",
                               "name": "Gas Boiler 1",
                               "internal": true,
                               "heat_supply": 2500,
-                              "price": 0.10666666666666667
+                              "fuel": {
+                                    "name": "Natural Gas",
+                                    "co2_equivalent": 0,
+                                    "calorific_value": 40
+                              },
+                              "price": 0.10666666666666667,
+                              "efficiency": 0.75
                         },
                         {
-                              "type": "HeatSource",
+                              "type": "CHP",
                               "name": "CHP 1",
                               "internal": true,
+                              "thermal_efficiency": 0.5,
+                              "electrical_efficiency": 0.4,
+                              "electricity_supply_reference": null,
                               "heat_supply": 1000,
-                              "price": -2.7755575615628914e-17
+                              "fuel": {
+                                    "name": "Natural Gas",
+                                    "co2_equivalent": 0.247,
+                                    "calorific_value": 40
+                              },
+                              "operating_mode": "thermal",
+                              "fuel_price_reference": "fuel_price_ref_CHP 1",
+                              "electricity_price_reference": "electricity_price_ref_CHP 1"
                         }
                   ],
                   "heat_demands": [

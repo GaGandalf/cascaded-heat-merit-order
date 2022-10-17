@@ -3,14 +3,14 @@ import unittest
 
 import pandas as pd
 
-from dhs import DHS
-from energy_converters import HeatSource, HeatDemand, Boiler
-from factory import Factory
-from factory_decoder import factory_dict_to_factory_object
-from factory_encoder import FactoryEncoder
-from location import Location
-from network_connectors import NetworkConnector
-from networks import HeatNetwork
+from cascaded_heat_merit_order.dhs import DHS
+from cascaded_heat_merit_order.energy_converters import HeatSource, HeatDemand, Boiler
+from cascaded_heat_merit_order.factory import Factory
+from cascaded_heat_merit_order.factory_decoder import factory_dict_to_factory_object
+from cascaded_heat_merit_order.factory_encoder import FactoryEncoder
+from cascaded_heat_merit_order.location import Location
+from cascaded_heat_merit_order.network_connectors import NetworkConnector
+from cascaded_heat_merit_order.networks import HeatNetwork
 
 
 class TestFactoryEncoderAndDecoder(unittest.TestCase):

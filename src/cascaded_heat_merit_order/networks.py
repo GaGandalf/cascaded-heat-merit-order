@@ -3,9 +3,9 @@ from typing import List
 
 import pandas as pd
 
-from energy_converters import HeatSource, HeatDemand
-from merits import DemandMerit, SupplyMerit, Merit
-from utils import find_electricity_price, find_electricity_co2_equivalence
+from cascaded_heat_merit_order.energy_converters import HeatSource, HeatDemand
+from cascaded_heat_merit_order.merits import DemandMerit, SupplyMerit, Merit
+from cascaded_heat_merit_order.utils import find_electricity_price, find_electricity_co2_equivalence
 
 
 class HeatNetwork:

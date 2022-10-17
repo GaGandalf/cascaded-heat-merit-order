@@ -3,9 +3,9 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from fuel import Fuel
-from merits import DemandMerit, SupplyMerit
-from utils import find_fuel_price, find_electricity_price, find_ambient_temperature
+from cascaded_heat_merit_order.fuel import Fuel
+from cascaded_heat_merit_order.merits import DemandMerit, SupplyMerit
+from cascaded_heat_merit_order.utils import find_fuel_price, find_electricity_price, find_ambient_temperature
 
 
 class EnergyConverter:
@@ -189,6 +189,7 @@ class CHP(HeatSource):
         self.electrical_efficiency = electrical_efficiency
         self.electricity_supply = electricity_supply
         self.fuel = fuel
+        self.operating_mode = operating_mode
 
         # If our operation mode is heat-oriented we need to calculate the price from the difference of the fuel price
         #  and the electricity price

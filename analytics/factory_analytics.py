@@ -4,16 +4,13 @@ import json
 from datetime import datetime
 from typing import List
 
-from factory_decoder import factory_dict_to_factory_object
-from network_connectors import HeatExchanger, HeatPump
-from src.factory import Factory
-from src.factory_encoder import FactoryEncoder
-
-from itertools import permutations
+from cascaded_heat_merit_order.factory_decoder import factory_dict_to_factory_object
+from cascaded_heat_merit_order.network_connectors import HeatExchanger, HeatPump
+from cascaded_heat_merit_order import Factory
 
 import logging
 
-from merit_order_tools import sum_merit_order_cost
+from analytics.merit_order_tools import sum_merit_order_cost
 
 
 def permutate_factory(factory: Factory, max_connectors: int = None, output_name="default.txt", supply_demand_df=None):

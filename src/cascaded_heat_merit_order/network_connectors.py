@@ -1,5 +1,5 @@
-from src.energy_converters import EnergyConverter
-from src.networks import HeatNetwork
+from cascaded_heat_merit_order.energy_converters import EnergyConverter
+from cascaded_heat_merit_order.networks import HeatNetwork
 
 
 class NetworkConnector(EnergyConverter):

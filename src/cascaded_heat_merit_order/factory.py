@@ -4,17 +4,17 @@ import logging
 from typing import List
 import pandas as pd
 
-from dhs import DHS
-from energy_converters import HeatDemand
-from network_connectors import NetworkConnector, HeatPump, HeatExchanger
-from location import Location
-from networks import HeatNetwork
-from utils import celsius_to_kelvin
+from cascaded_heat_merit_order.dhs import DHS
+from cascaded_heat_merit_order.energy_converters import HeatDemand
+from cascaded_heat_merit_order.network_connectors import NetworkConnector, HeatPump, HeatExchanger
+from cascaded_heat_merit_order.location import Location
+from cascaded_heat_merit_order.networks import HeatNetwork
+from cascaded_heat_merit_order.utils import celsius_to_kelvin
 
 
 class Factory:
     def __init__(self, name: str, location: Location,
-                 dhs: DHS,
+                 dhs: DHS = None,
                  networks: [HeatNetwork] = None,
                  network_connectors: [NetworkConnector] = None,
                  grid_size=None,
@@ -176,7 +176,7 @@ class Factory:
             # HeatPump required,
             # Most favorable feed in temp is the minimum feed in temp
             dhs_network = HeatNetwork(name=dhs.name,
-                                      operating_temperature=celsius_to_kelvin(dhs.minimum_feed_in_temperature),
+                                      operating_temperature=dhs.minimum_feed_in_temperature,
                                       heat_sources=dhs_heat_sources,
                                       heat_demands=dhs_heat_demand,
                                       internal=False)
@@ -186,7 +186,7 @@ class Factory:
             # HeatExchanger required,
             # most favorable feed in temp is the maximum feed in temp
             dhs_network = HeatNetwork(name=dhs.name,
-                                      operating_temperature=celsius_to_kelvin(dhs.maximum_feed_in_temperature),
+                                      operating_temperature=dhs.maximum_feed_in_temperature,
                                       heat_sources=dhs_heat_sources,
                                       heat_demands=dhs_heat_demand,
                                       internal=False)

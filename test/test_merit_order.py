@@ -1,9 +1,9 @@
 import unittest
 from datetime import datetime, timedelta
 
-from energy_converters import HeatSource, HeatDemand
-from merits import Merit
-from networks import HeatNetwork
+from cascaded_heat_merit_order.energy_converters import HeatSource, HeatDemand
+from cascaded_heat_merit_order.merits import Merit
+from cascaded_heat_merit_order.networks import HeatNetwork
 
 
 class TestMeritOrderSingleNetwork(unittest.TestCase):

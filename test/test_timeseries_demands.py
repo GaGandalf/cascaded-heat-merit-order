@@ -1,15 +1,13 @@
 import unittest
-from datetime import datetime, timedelta
 
-import numpy as np
 import pandas as pd
 
-from dhs import DHS
-from energy_converters import Boiler, HeatDemand, HeatSource
-from factory import Factory
-from location import Location
-from networks import HeatNetwork
-from utils import datetime_range, celsius_to_kelvin
+from cascaded_heat_merit_order.dhs import DHS
+from cascaded_heat_merit_order.energy_converters import Boiler, HeatDemand, HeatSource
+from cascaded_heat_merit_order.factory import Factory
+from cascaded_heat_merit_order.location import Location
+from cascaded_heat_merit_order.networks import HeatNetwork
+from cascaded_heat_merit_order.utils import celsius_to_kelvin
 
 
 class TestTimeSeriesMeritOrder(unittest.TestCase):

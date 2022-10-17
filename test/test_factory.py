@@ -1,14 +1,13 @@
 import unittest
-from datetime import datetime
 
-from dhs import DHS
-from energy_converters import HeatSource, HeatDemand, Boiler, CHP
-from factory import Factory
-from location import Location
-from merits import Merit
-from network_connectors import HeatPump, HeatExchanger
-from networks import HeatNetwork, apply_specific_electricity_costs
-from utils import find_electricity_price, celsius_to_kelvin
+from cascaded_heat_merit_order.dhs import DHS
+from cascaded_heat_merit_order.energy_converters import HeatSource, HeatDemand, Boiler, CHP
+from cascaded_heat_merit_order.factory import Factory
+from cascaded_heat_merit_order.location import Location
+from cascaded_heat_merit_order.merits import Merit
+from cascaded_heat_merit_order.network_connectors import HeatPump, HeatExchanger
+from cascaded_heat_merit_order.networks import HeatNetwork
+from cascaded_heat_merit_order.utils import celsius_to_kelvin
 
 
 class TestComplexFactory(unittest.TestCase):

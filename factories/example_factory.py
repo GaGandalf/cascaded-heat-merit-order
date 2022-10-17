@@ -1,13 +1,13 @@
 import json
 
-from network_connectors import HeatExchanger, NetworkConnector
-from src.dhs import DHS
-from src.energy_converters import HeatSource, Boiler, CHP, HeatDemand, Cooler
-from src.factory import Factory
-from src.factory_encoder import FactoryEncoder
-from src.location import Location
-from src.networks import HeatNetwork
-from src.utils import celsius_to_kelvin
+from cascaded_heat_merit_order.network_connectors import HeatExchanger
+from cascaded_heat_merit_order.dhs import DHS
+from cascaded_heat_merit_order import HeatSource, Boiler, CHP, HeatDemand, Cooler
+from cascaded_heat_merit_order import Factory
+from cascaded_heat_merit_order.factory_encoder import FactoryEncoder
+from cascaded_heat_merit_order import Location
+from cascaded_heat_merit_order import HeatNetwork
+from cascaded_heat_merit_order import celsius_to_kelvin
 
 
 def save_example_factory():

@@ -1,0 +1,85 @@
+{
+      "name": "Simple SET Factory",
+      "location": {
+            "name": "factoryTestLocation",
+            "latitude": 12.01,
+            "longitude": 13.02
+      },
+      "dhs": null,
+      "networks": [
+            {
+                  "name": "HT Heat Network",
+                  "operating_temperature": 393.15,
+                  "internal": true,
+                  "is_cooling_network": false,
+                  "heat_sources": [
+                        {
+                              "type": "Boiler",
+                              "name": "Gas Boiler 1",
+                              "internal": true,
+                              "heat_supply": 2500,
+                              "fuel": {
+                                    "name": "Natural Gas",
+                                    "co2_equivalent": 0,
+                                    "calorific_value": 40
+                              },
+                              "price": 0.08888888888888889,
+                              "efficiency": 0.9
+                        },
+                        {
+                              "type": "HeatSource",
+                              "name": "Waste Heat HT",
+                              "internal": true,
+                              "heat_supply": "heat_Waste_Heat_HT",
+                              "price": 0
+                        }
+                  ],
+                  "heat_demands": [
+                        {
+                              "type": "HeatDemand",
+                              "name": "Demand HT",
+                              "internal": true,
+                              "heat_demand": "heat_Demand_HT",
+                              "price": 0
+                        }
+                  ],
+                  "cooling_cost": 0
+            },
+            {
+                  "name": "MT Heat Network",
+                  "operating_temperature": 353.15,
+                  "internal": true,
+                  "is_cooling_network": false,
+                  "heat_sources": [
+                        {
+                              "type": "HeatSource",
+                              "name": "Waste Heat MT",
+                              "internal": true,
+                              "heat_supply": "heat_Waste_Heat_MT",
+                              "price": 0
+                        }
+                  ],
+                  "heat_demands": [
+                        {
+                              "type": "HeatDemand",
+                              "name": "Demand MT",
+                              "internal": true,
+                              "heat_demand": "heat_Demand_MT",
+                              "price": 0
+                        }
+                  ],
+                  "cooling_cost": 0
+            }
+      ],
+      "network_connectors": [
+            {
+                  "name": "HT to MT Heat Exchanger",
+                  "heat_sink": "HT Heat Network",
+                  "heat_source": "MT Heat Network",
+                  "max_throughput": null,
+                  "price": 0,
+                  "efficiency": 1,
+                  "type": "HeatExchanger"
+            }
+      ]
+}

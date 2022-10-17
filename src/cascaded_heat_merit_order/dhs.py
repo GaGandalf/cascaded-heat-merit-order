@@ -1,5 +1,5 @@
-from location import Location
-from utils import celsius_to_kelvin
+from cascaded_heat_merit_order.location import Location
+from cascaded_heat_merit_order.utils import celsius_to_kelvin
 import pandas as pd
 
 

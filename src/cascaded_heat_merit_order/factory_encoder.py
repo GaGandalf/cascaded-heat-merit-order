@@ -1,16 +1,14 @@
 import json
-from typing import List
 
 import pandas as pd
 
-from dhs import DHS
-from energy_converters import Boiler, CHP, HeatSource, HeatDemand, EnergyConverter
-from factory import Factory
-from fuel import Fuel
-from network_connectors import HeatPump, HeatExchanger
-from networks import HeatNetwork
-
-from location import Location
+from cascaded_heat_merit_order.dhs import DHS
+from cascaded_heat_merit_order.energy_converters import Boiler, CHP, HeatSource, HeatDemand, EnergyConverter
+from cascaded_heat_merit_order.factory import Factory
+from cascaded_heat_merit_order.fuel import Fuel
+from cascaded_heat_merit_order.network_connectors import HeatPump, HeatExchanger
+from cascaded_heat_merit_order.networks import HeatNetwork
+from cascaded_heat_merit_order.location import Location
 
 
 def encode_dhs(dhs: DHS) -> dict:
@@ -191,7 +189,10 @@ def encode_network_connector(network_connector):
 
 class FactoryEncoder(json.JSONEncoder):
     def default(self, factory: Factory):
-        encoded_dhs = encode_dhs(factory.dhs)
+        if factory.dhs:
+            encoded_dhs = encode_dhs(factory.dhs)
+        else:
+            encoded_dhs = None
 
         encoded_networks = []
         for network in factory.networks:

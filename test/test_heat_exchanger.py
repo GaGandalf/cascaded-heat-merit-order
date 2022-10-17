@@ -1,12 +1,12 @@
 import unittest
 
-from dhs import DHS
-from energy_converters import HeatSource, HeatDemand
-from factory import Factory
-from location import Location
-from merits import Merit
-from network_connectors import NetworkConnector, HeatExchanger
-from networks import HeatNetwork
+from cascaded_heat_merit_order.dhs import DHS
+from cascaded_heat_merit_order.energy_converters import HeatSource, HeatDemand
+from cascaded_heat_merit_order.factory import Factory
+from cascaded_heat_merit_order.location import Location
+from cascaded_heat_merit_order.merits import Merit
+from cascaded_heat_merit_order.network_connectors import NetworkConnector, HeatExchanger
+from cascaded_heat_merit_order.networks import HeatNetwork
 
 
 class TestHeatExchanger(unittest.TestCase):

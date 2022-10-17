@@ -2,13 +2,13 @@ import unittest
 from copy import copy
 from datetime import datetime
 
-from dhs import DHS
-from energy_converters import HeatSource, HeatDemand, Cooler
-from factory import Factory
-from location import Location
-from network_connectors import HeatPump
-from networks import HeatNetwork
-from utils import celsius_to_kelvin, load_reference
+from cascaded_heat_merit_order.dhs import DHS
+from cascaded_heat_merit_order.energy_converters import HeatSource, HeatDemand, Cooler
+from cascaded_heat_merit_order.factory import Factory
+from cascaded_heat_merit_order.location import Location
+from cascaded_heat_merit_order.network_connectors import HeatPump
+from cascaded_heat_merit_order.networks import HeatNetwork
+from cascaded_heat_merit_order.utils import celsius_to_kelvin, load_reference
 
 
 class TestCooling(unittest.TestCase):

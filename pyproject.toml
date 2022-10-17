@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cascaded_heat_merit_order"
+version = "0.4"
+authors = [
+  { name="Jan Niklas Scherff", email="jannik@scherff.eu" },
+]
+description = "Tool for calculating a factory-wide merit order of heat-flows of industrial energy systems."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/GaGandalf/cascaded-heat-merit-order"
