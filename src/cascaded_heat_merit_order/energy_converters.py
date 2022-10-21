@@ -182,7 +182,12 @@ class CHP(HeatSource):
                  fuel: Fuel = Fuel(name="Natural Gas", co2_equivalent=0.247, calorific_value=40),
                  operating_mode="thermal",
                  fuel_price_reference=None,
-                 electricity_price_reference=None
+                 electricity_price_reference=None,
+                 coupled_supply=False,
+                 supply_split=None,
+                 coupled_network=None,
+                 coupling_waste_cost=None,
+                 minimum_supply=0
                  ):
 
         self.thermal_efficiency = thermal_efficiency
@@ -190,6 +195,13 @@ class CHP(HeatSource):
         self.electricity_supply = electricity_supply
         self.fuel = fuel
         self.operating_mode = operating_mode
+        self.coupled_supply = coupled_supply
+        self.minimum_supply = minimum_supply
+
+        if self.coupled_supply:
+            self.supply_split = supply_split
+            self.coupled_network = coupled_network
+            self.coupling_waste_cost = coupling_waste_cost
 
         # If our operation mode is heat-oriented we need to calculate the price from the difference of the fuel price
         #  and the electricity price
@@ -208,12 +220,32 @@ class CHP(HeatSource):
         HeatSource.__init__(self, name, internal, heat_supply=heat_supply, price=price)
         self.co2_equivalent = self.fuel.co2_equivalent / self.thermal_efficiency
 
+    def get_supply(self, timestamp):
+        if self.coupled_supply:
+            split_factor = self.supply_split[0]
+        else:
+            split_factor = 1
+
+        if isinstance(self.supply, list):
+            return next((supply["supply"] * split_factor for supply in self.supply
+                         if supply["timestamp"] == timestamp),
+                        0)
+
+        elif isinstance(self.supply, pd.Series):
+            return self.supply[timestamp] * split_factor
+
+        else:
+            return self.supply * split_factor
+
     def make_chp_price(self, fuel_price_reference, electricity_price_reference):
         """
         :return:
         """
         # Default price
         price = 0.08 / self.thermal_efficiency - 0.2 * (self.electrical_efficiency / self.thermal_efficiency)
+
+        if self.coupled_supply:
+            price = price + self.coupling_waste_cost
 
         if fuel_price_reference is not None:
             price = []
@@ -222,20 +254,29 @@ class CHP(HeatSource):
                 matching_electricity_price = find_electricity_price(timestamp, electricity_price_reference) * (
                         self.electrical_efficiency / self.thermal_efficiency)
                 fuel_price = find_fuel_price(timestamp, fuel_price_reference) / self.thermal_efficiency
-                price.append({"price": fuel_price - matching_electricity_price,
+                current_price = fuel_price - matching_electricity_price
+                if self.coupled_supply:
+                    price = price + self.coupling_waste_cost
+                price.append({"price": current_price,
                               "timestamp": timestamp})
                 matched_timestamps.append(timestamp)
 
-            if electricity_price_reference is not None:
-                if len(price) < len(electricity_price_reference):
-                    for timestamp in electricity_price_reference.index:
-                        if timestamp not in matched_timestamps:
-                            matching_fuel_price = find_fuel_price(timestamp,
-                                                                  fuel_price_reference) / self.thermal_efficiency
-                            electricity_price = find_electricity_price(timestamp, electricity_price_reference) \
-                                                * (self.electrical_efficiency / self.thermal_efficiency)
-                            price.append({"price": matching_fuel_price - electricity_price,
-                                          "timestamp": timestamp})
+        elif electricity_price_reference is not None:
+            price = []
+            matched_timestamps = []
+            if len(price) < len(electricity_price_reference):
+                for timestamp in electricity_price_reference.index:
+                    if timestamp not in matched_timestamps:
+                        matching_fuel_price = find_fuel_price(timestamp,
+                                                              fuel_price_reference) / self.thermal_efficiency
+                        electricity_price = find_electricity_price(timestamp, electricity_price_reference) \
+                                            * (self.electrical_efficiency / self.thermal_efficiency)
+
+                        current_price = matching_fuel_price - electricity_price
+                        if self.coupled_supply:
+                            current_price = current_price + self.coupling_waste_cost
+                        price.append({"price": current_price,
+                                      "timestamp": timestamp})
         return price
 
     def heat_supply_from_electricity_supply(self):
@@ -247,6 +288,17 @@ class CHP(HeatSource):
         else:
             fuel_enthalpy = self.electricity_supply / self.electrical_efficiency
             return fuel_enthalpy * self.thermal_efficiency
+
+    def get_merit(self, timestamp: datetime, internal=True) -> SupplyMerit:
+        supply = self.get_supply(timestamp=timestamp)
+        price = self.get_price(timestamp=timestamp)
+        co2_equivalent = self.co2_equivalent
+        if self.minimum_supply > supply:
+            return SupplyMerit(self.name, 0, price, co2_equivalent=co2_equivalent, internal=internal,
+                               is_coupled=self.coupled_supply, minimum_supply=self.minimum_supply)
+        else:
+            return SupplyMerit(self.name, supply, price, co2_equivalent=co2_equivalent, internal=internal,
+                               is_coupled=self.coupled_supply, minimum_supply=self.minimum_supply)
 
 
 class Cooler(EnergyConverter):
@@ -267,11 +319,12 @@ class Cooler(EnergyConverter):
             eeg = round(eeg, 5)
             return electricity_price / eeg
 
-        elif(isinstance(self.cooling_cost), pd.Series):
+        elif (isinstance(self.cooling_cost), pd.Series):
             return self.cooling_cost[timestamp]
 
         else:
             return self.cooling_cost
+
 
 def get_boiler_price(fuel_price_reference, efficiency):
     base_price = 0.08 / efficiency  # [(€/s) / kW]

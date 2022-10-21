@@ -5,7 +5,7 @@ from typing import List
 import pandas as pd
 
 from cascaded_heat_merit_order.dhs import DHS
-from cascaded_heat_merit_order.energy_converters import HeatDemand
+from cascaded_heat_merit_order.energy_converters import HeatDemand, HeatSource
 from cascaded_heat_merit_order.network_connectors import NetworkConnector, HeatPump, HeatExchanger
 from cascaded_heat_merit_order.location import Location
 from cascaded_heat_merit_order.networks import HeatNetwork
@@ -27,6 +27,7 @@ class Factory:
         self.dhs = dhs
         self.networks = networks
         self.hts = None
+        self.coupled_supplies = 0
 
         self.network_connectors = network_connectors
 
@@ -36,6 +37,7 @@ class Factory:
 
         self.save_connections = False
         self.persistent_networks = copy.deepcopy(self.networks)
+
 
         self.df = df
 
@@ -64,6 +66,9 @@ class Factory:
                                                            network_connector.max_throughput,
                                                            efficiency=network_connector.efficiency)
 
+    def add_coupled_supply(self):
+        raise NotImplementedError
+
     def merit_order(self, timestamp: datetime.datetime = datetime.datetime.now(), remaining_supply=True,
                     remaining_demand=True, initial=True):
 
@@ -72,6 +77,7 @@ class Factory:
             self.networks = copy.deepcopy(self.persistent_networks)
             self.register_network_connections()
             self.mo = None
+            self.coupled_supplies = 0
 
         if not remaining_demand == 0 and not remaining_supply == 0:
             cheapest_merit = None
@@ -84,10 +90,41 @@ class Factory:
                     if not cheapest_merit or cheapest_merit.price > current_networks_cheapest_merit.price:
                         cheapest_merit = current_networks_cheapest_merit
 
+            coupled_merit_supply_system = None
+
             if not cheapest_merit:
                 # If no merit could be found, terminate the process
                 # self.networks = self.persistent_networks
                 return
+
+            if cheapest_merit.supply_is_coupled:
+
+                for network in self.networks:
+                    if network.heat_sources:
+                        for heat_source in network.heat_sources:
+                            if heat_source.name == cheapest_merit.name_source:
+                                total_heat_supply = cheapest_merit.original_supply / (heat_source.supply_split[0])
+                                coupled_supply = total_heat_supply * heat_source.supply_split[1]
+                                coupled_merit_supply_system = heat_source
+                                break
+
+                if coupled_supply:
+                    for network in self.networks:
+                        if network.name == coupled_merit_supply_system.coupled_network:
+
+                            coupled_heat_source = HeatSource(
+                                name=f"Coupled Supply {coupled_merit_supply_system.name} {self.coupled_supplies}",
+                                heat_supply=[{"supply": coupled_supply, "timestamp": timestamp}],
+                                price=-coupled_merit_supply_system.coupling_waste_cost
+                            )
+                            self.coupled_supplies = self.coupled_supplies + 1
+                            if network.heat_sources:
+                                network.heat_sources.append(coupled_heat_source)
+                            else:
+                                network.heat_sources = [coupled_heat_source]
+
+                else:
+                    raise(KeyError("Could not find the coupled heat source!"))
 
             for i, network in enumerate(self.networks):
                 # Demand updating
@@ -127,8 +164,14 @@ class Factory:
                     for supply_system in network.heat_sources:
                         if cheapest_merit.name_source == supply_system:
                             # Reduce the source supply by the original supply
-                            supply_system.update_supply_at_timestamp(timestamp=timestamp,
-                                                                     add=(-cheapest_merit.original_supply))
+                            print()
+                            if coupled_merit_supply_system:
+                                supply_system.update_supply_at_timestamp(timestamp=timestamp,
+                                                                         add=(-cheapest_merit.original_supply/coupled_merit_supply_system.supply_split[0]))
+                            else:
+                                supply_system.update_supply_at_timestamp(timestamp=timestamp,
+                                                                         add=(-cheapest_merit.original_supply))
+
 
             # Do not save the used connections#
             if self.save_connections:

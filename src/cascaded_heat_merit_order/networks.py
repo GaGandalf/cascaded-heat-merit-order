@@ -171,7 +171,8 @@ class HeatNetwork:
                     Merit(name_source=supply_merit.name, name_sink=demand_merit.name,
                           supply=demand_merit.demand, price=supply_merit.price + demand_merit.price,
                           connections=connections, original_supply=supply_at_base_network_level,
-                          sink_internal=self.internal, source_internal=supply_merit.internal
+                          sink_internal=self.internal, source_internal=supply_merit.internal,
+                          supply_is_coupled=supply_merit.is_coupled
                           )
                 )
 
@@ -183,7 +184,8 @@ class HeatNetwork:
                     Merit(name_source=supply_merit.name, name_sink=demand_merit.name,
                           supply=supply_merit.supply, price=supply_merit.price + demand_merit.price,
                           connections=supply_merit.connections, original_supply=supply_merit.original_supply,
-                          sink_internal=self.internal, source_internal=supply_merit.internal)
+                          sink_internal=self.internal, source_internal=supply_merit.internal,
+                          supply_is_coupled=supply_merit.is_coupled)
                 )
 
             else:
@@ -193,7 +195,8 @@ class HeatNetwork:
                     Merit(name_source=supply_merit.name, name_sink=demand_merit.name,
                           supply=supply_merit.supply, price=supply_merit.price + demand_merit.price,
                           connections=supply_merit.connections, original_supply=supply_merit.original_supply,
-                          sink_internal=self.internal, source_internal=supply_merit.internal)
+                          sink_internal=self.internal, source_internal=supply_merit.internal,
+                          supply_is_coupled=supply_merit.is_coupled)
                 )
             self.match_supply_and_demand(dmo, smo)
 
