@@ -1,6 +1,11 @@
 from datetime import datetime, timedelta
+from typing import List
+
 import pandas as pd
 import logging
+from meteostat import Point, Hourly
+
+from cascaded_heat_merit_order.location import Location
 
 reference_df = None
 
@@ -87,3 +92,19 @@ def set_up_merit_order_calculation():
     except FileNotFoundError:
         logging.warning("Reference data not found! Using defaults.")
         logging.debug("Reference data should be placed in root/data/reference.csv")
+
+
+def get_weather_df_hourly(timeframe: List[datetime],
+                          location: Location):
+    """
+    @param: timeframe - array of 2 datetime objects, start and finish
+    @param: location - array of coordinates lat/long (floats) default @ETA-Fabrik TU Darmstadt
+
+    returns: pandas df with hourly weather data for location
+    """
+    # Get location for meteostat
+    location = Point(location.latitude, location.longitude)
+    # Get hourly data for datetime period
+    data = Hourly(location, timeframe[0], timeframe[1])
+    data = data.fetch()
+    return (data)
