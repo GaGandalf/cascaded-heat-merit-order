@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import timedelta
 
 import numpy as np
 import pandas as pd
@@ -21,6 +22,95 @@ class EnergyConverter:
     def __eq__(self, other):
         return self.name == other
 
+
+class HeatStorage(EnergyConverter):
+    """
+    Simplified Heat-Storage Unit
+
+
+
+
+    Price Threshold:
+    Activated after all internal demands have been met
+
+    Do we fill the Storage, or emtpy it?
+
+    Store it cheap, sell it expensive
+
+    If we can sell our heat for a profit, we sell to the DHS
+    If we cant sell our heat for a profit, say as the DHS has cheap sources active, we fill the storage as long as we
+    stay below the user defined price_threshold.
+
+    We empty the storage either A: to fulfill internal demands if we cant meet them otherwise or B, to gain profits by
+    selling to the DHS
+
+
+    Heat Loss:
+
+    """
+
+    def __init__(self, name: str, capacity: float, level: pd.Series, internal: bool = True, fill_threshold: float = 0,
+                 empty_threshold: float = 0, min_level=100, co2_eqv=0, operation_mode = None):
+        EnergyConverter.__init__(self, name, internal)
+        self.capacity = capacity
+        self.level = level
+        self.fill_threshold = fill_threshold
+        self.empty_threshold = empty_threshold
+        self.operation_mode = operation_mode
+        self.min_level = min_level
+        self.co2eqv = co2_eqv
+
+    def change_level(self, delta, timestamp):
+        if isinstance(self.level, pd.Series):
+            self.level[timestamp] = self.level[timestamp] + delta
+            self.level[self.level.index > timestamp] = self.level[timestamp]
+        else:
+            self.level = self.level + delta
+
+    def get_operation_mode(self, timestamp):
+        if isinstance(self.operation_mode, pd.Series):
+            try:
+                return self.operation_mode[timestamp]
+            except KeyError:
+                return None
+        return None
+
+    def set_operation_mode(self, mode, timestamp):
+        if not isinstance(self.operation_mode, pd.Series):
+            self.operation_mode = pd.Series(mode, pd.DatetimeIndex([timestamp]))
+        else:
+            self.operation_mode[timestamp] = mode
+
+    def get_level(self, timestamp):
+        if isinstance(self.level, list):
+            return next((level["level"] for level in self.level
+                         if level["timestamp"] == timestamp),
+                        0)
+
+        elif isinstance(self.level, pd.Series):
+            return self.level[timestamp]
+
+        else:
+            return self.level
+
+
+    def get_co2_equivalent(self, timestamp):
+        if isinstance(self.co2eqv, pd.Series):
+            return self.co2eqv[timestamp]
+        else:
+            return self.co2eqv
+
+    def get_supply_merit(self, timestamp, internal=True) -> SupplyMerit:
+        level = self.get_level(timestamp=timestamp)
+        price = self.empty_threshold
+        co2_equivalent = self.get_co2_equivalent(timestamp)
+        return SupplyMerit(self.name, level, price, co2_equivalent=co2_equivalent, internal=internal)
+
+
+    def get_demand_merit(self, timestamp) -> DemandMerit:
+        demand = self.capacity - self.get_level(timestamp)
+        price = self.fill_threshold
+        return DemandMerit(self.name, demand, price)
 
 class HeatSource(EnergyConverter):
     """

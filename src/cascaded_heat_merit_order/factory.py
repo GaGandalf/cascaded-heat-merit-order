@@ -5,7 +5,7 @@ from typing import List
 import pandas as pd
 
 from cascaded_heat_merit_order.dhs import DHS
-from cascaded_heat_merit_order.energy_converters import HeatDemand, HeatSource
+from cascaded_heat_merit_order.energy_converters import HeatDemand, HeatSource, HeatStorage
 from cascaded_heat_merit_order.network_connectors import NetworkConnector, HeatPump, HeatExchanger
 from cascaded_heat_merit_order.location import Location
 from cascaded_heat_merit_order.networks import HeatNetwork
@@ -94,7 +94,6 @@ class Factory:
 
             if not cheapest_merit:
                 # If no merit could be found, terminate the process
-                # self.networks = self.persistent_networks
                 return
 
             if cheapest_merit.supply_is_coupled:
@@ -143,28 +142,27 @@ class Factory:
                                     add=(-demand_system.get_demand(timestamp))
                                 )
 
-                            # Update the network connections
-                            if cheapest_merit.connections:
 
-                                supply_via = cheapest_merit.supply
-                                for connection in cheapest_merit.connections:
-                                    for connection_object in connection["heat_sink"].input_connections:
-                                        if connection_object["source"] == connection["heat_source"]:
-                                            if connection_object["source"].operating_temperature > \
-                                                    connection["heat_sink"].operating_temperature:
-                                                # Apply the efficiency factor to heat-exchangers
-                                                supply_via = supply_via / connection_object["efficiency"]
-                                            if connection_object["max_throughput"]:
-                                                connection_object["max_throughput"] = connection_object[
-                                                                                          "max_throughput"] - \
-                                                                                      connection["transfer_amount"]
+                # Storage updating
+                if network.heat_storage:
+                    for storage in network.heat_storage:
+                        if cheapest_merit.name_sink == storage:
+                            # Fill the storage
+                            storage.change_level(delta=cheapest_merit.supply, timestamp=timestamp)
+                            storage.set_operation_mode(mode="fill", timestamp=timestamp)
+                            self.persist_storage(storage)
+
+                        if cheapest_merit.name_source == storage:
+                            storage.change_level(delta=-cheapest_merit.original_supply, timestamp=timestamp)
+                            storage.set_operation_mode(mode="empty", timestamp=timestamp)
+                            self.persist_storage(storage)
+
 
                 # Supply updating
                 if network.heat_sources:
                     for supply_system in network.heat_sources:
                         if cheapest_merit.name_source == supply_system:
                             # Reduce the source supply by the original supply
-                            print()
                             if coupled_merit_supply_system:
                                 supply_system.update_supply_at_timestamp(timestamp=timestamp,
                                                                          add=(-cheapest_merit.original_supply/coupled_merit_supply_system.supply_split[0]))
@@ -172,6 +170,21 @@ class Factory:
                                 supply_system.update_supply_at_timestamp(timestamp=timestamp,
                                                                          add=(-cheapest_merit.original_supply))
 
+
+            # Update the network connections
+            if cheapest_merit.connections:
+                supply_via = cheapest_merit.supply
+                for connection in cheapest_merit.connections:
+                    for connection_object in connection["heat_sink"].input_connections:
+                        if connection_object["source"] == connection["heat_source"]:
+                            if connection_object["source"].operating_temperature > \
+                                    connection["heat_sink"].operating_temperature:
+                                # Apply the efficiency factor to heat-exchangers
+                                supply_via = supply_via / connection_object["efficiency"]
+                            if connection_object["max_throughput"]:
+                                connection_object["max_throughput"] = connection_object[
+                                                                          "max_throughput"] - \
+                                                                      connection["transfer_amount"]
 
             # Do not save the used connections#
             if self.save_connections:
@@ -284,6 +297,15 @@ class Factory:
                             self.mo_timestamp)
         return remaining_internal_demand
 
+    def remaining_internal_supply(self):
+        remaining_internal_supply = 0
+        for network in self.networks:
+            if network.internal:
+                if network.heat_sources:
+                    for heat_source in network.heat_sources:
+                        remaining_internal_supply = remaining_internal_supply + heat_source.get_supply(self.mo_timestamp)
+
+
     def remaining_cooling_demand(self) -> float:
         remaining_cooling_demand = 0
         for network in self.networks:
@@ -314,6 +336,13 @@ class Factory:
 
     def reset_networks(self):
         self.networks = copy.deepcopy(self.persistent_networks)
+
+    def persist_storage(self, storage: HeatStorage):
+        for network in self.persistent_networks:
+            if network.heat_storage:
+                for persistent_storage in network.heat_storage:
+                    if storage.name == persistent_storage.name:
+                        persistent_storage.level = copy.deepcopy(storage.level)
 
 
 def update_network_connections(networks: List[HeatNetwork], source_network_name: str, sink_network_name: str,

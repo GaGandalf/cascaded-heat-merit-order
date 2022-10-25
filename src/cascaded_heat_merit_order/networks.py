@@ -16,7 +16,8 @@ class HeatNetwork:
                  input_connections: [] = None,
                  connected_sink_networks: [] = None,
                  cooling_cost: (int, float) = 0,
-                 coolers: [] = None
+                 coolers: [] = None,
+                 heat_storage: [] = None
                  ):
         self.mo = []
         self.dmo = []
@@ -28,6 +29,7 @@ class HeatNetwork:
 
         self.heat_sources = heat_sources
         self.heat_demands = heat_demands
+        self.heat_storage = heat_storage
 
         self.input_connections = input_connections
         self.connected_sink_networks = connected_sink_networks
@@ -59,6 +61,12 @@ class HeatNetwork:
             for demand_system in self.heat_demands:
                 demand_merit = demand_system.get_demand_merit(timestamp)
                 if demand_merit.demand > 0:
+                    dmo.append(demand_merit)
+        if self.heat_storage:
+            for heat_storage in self.heat_storage:
+                if not heat_storage.get_operation_mode(timestamp) or heat_storage.get_operation_mode(
+                        timestamp) == "fill":
+                    demand_merit = heat_storage.get_demand_merit(timestamp)
                     dmo.append(demand_merit)
         return dmo
 
@@ -149,7 +157,14 @@ class HeatNetwork:
             supply_merit = smo[0]
             demand_merit = dmo[0]
 
-            if demand_merit.demand < supply_merit.supply:
+            if demand_merit.name == supply_merit.name:
+                if len(smo) == 1 or len(dmo) == 1:
+                    return
+                else:
+                    # Remove the storage from the demand order, supply first
+                    dmo.pop(0)
+
+            elif demand_merit.demand < supply_merit.supply:
                 # The demand was satisfied by the supply
                 dmo.pop(0)
                 # The remaining amount of heat supply from this unit at the level of the demand
@@ -245,6 +260,15 @@ def get_internal_smo(network: HeatNetwork, timestamp: datetime = datetime.now())
             supply_merit = heat_source.get_merit(timestamp, network.internal)
             if supply_merit.supply > 0:
                 internal_smo.append(supply_merit)
+
+    if network.heat_storage:
+        for heat_storage in network.heat_storage:
+            if not heat_storage.get_operation_mode(timestamp) or heat_storage.get_operation_mode(timestamp) == "empty":
+                # Check the level
+                if heat_storage.get_level(timestamp) > heat_storage.min_level:
+                    supply_merit = heat_storage.get_supply_merit(timestamp, network.internal)
+                    internal_smo.append(supply_merit)
+
     internal_smo.sort(key=lambda x: x.price)
     return internal_smo
 

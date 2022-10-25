@@ -1,9 +1,10 @@
 import unittest
+from datetime import datetime
 
 import pandas as pd
 
 from cascaded_heat_merit_order.dhs import DHS
-from cascaded_heat_merit_order.energy_converters import Boiler, HeatDemand, HeatSource
+from cascaded_heat_merit_order.energy_converters import Boiler, HeatDemand, HeatSource, HeatStorage
 from cascaded_heat_merit_order.factory import Factory
 from cascaded_heat_merit_order.location import Location
 from cascaded_heat_merit_order.networks import HeatNetwork
@@ -72,6 +73,57 @@ class TestTimeSeriesMeritOrder(unittest.TestCase):
                                   dhs=dhs, networks=networks)
 
         testing_factory.connect_dhs(rh_name)
+
+        for timestamp in self.supply_demand_df.index:
+            if datetime(2018, 1, 1, 7) < timestamp < datetime(2018, 1, 1, 18):
+                testing_factory.merit_order(timestamp)
+
+                print(f"Merit order for {timestamp}")
+                testing_factory.print_merit_order()
+                print()
+
+    def test_dhs_demand_with_ies_storage(self):
+        """
+        :return:
+        """
+        rh_name = "RH Testing Network"
+        rh_waste_name = "Solar1"
+        rh_demand_name = "Demand1"
+        rh_storage_name = "RH Storage"
+
+        self.supply_demand_df["level"] = 500
+        self.supply_demand_df = self.supply_demand_df.sort_index()
+
+        waste_heat_source_rh = [
+            HeatSource(name=rh_waste_name, heat_supply=self.supply_demand_df[f"heat_{rh_waste_name}"])]
+        heat_demands_rh = [HeatDemand(name="RH Internal Heat Demand",
+                                      heat_demand=self.supply_demand_df[f"heat_{rh_demand_name}"])]
+
+
+
+        storage_rh = [
+            HeatStorage(name=rh_storage_name, capacity=1000,
+                        level=self.supply_demand_df["level"], fill_threshold=0, empty_threshold=0.2)
+        ]
+
+        networks = [
+            HeatNetwork(name=rh_name, operating_temperature=celsius_to_kelvin(60), heat_sources=waste_heat_source_rh,
+                        heat_demands=heat_demands_rh, heat_storage=storage_rh)]
+
+        dhs_location = Location("testlocation", 12, 13)
+        factory_location = Location("factoryTestLocation", 12.01, 13.02)
+
+        dhs_demand_name = "Demand2"
+        dhs = DHS(name="DHS", location=dhs_location, demand_profile=self.supply_demand_df[f"heat_{dhs_demand_name}"],
+                  min_temp=celsius_to_kelvin(100), max_temp=celsius_to_kelvin(120))
+
+        testing_factory = Factory(name="Testfactory", location=factory_location,
+                                  dhs=dhs, networks=networks)
+
+        testing_factory.connect_dhs(rh_name)
+
+
+
 
         for timestamp in self.supply_demand_df.index:
             testing_factory.merit_order(timestamp)
