@@ -98,6 +98,7 @@ def encode_chp(chp: CHP) -> dict:
         "operating_mode": chp.operating_mode,
         "fuel_price_reference": fuel_price_reference_column_string,
         "electricity_price_reference": electricity_price_reference_column_string,
+        "price": None
     }
 
 

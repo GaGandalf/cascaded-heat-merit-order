@@ -107,10 +107,10 @@ class HeatStorage(EnergyConverter):
         return SupplyMerit(self.name, level, price, co2_equivalent=co2_equivalent, internal=internal)
 
 
-    def get_demand_merit(self, timestamp) -> DemandMerit:
+    def get_demand_merit(self, timestamp, network_name) -> DemandMerit:
         demand = self.capacity - self.get_level(timestamp)
         price = self.fill_threshold
-        return DemandMerit(self.name, demand, price)
+        return DemandMerit(self.name, demand, price, network_name)
 
 class HeatSource(EnergyConverter):
     """
@@ -118,17 +118,19 @@ class HeatSource(EnergyConverter):
     """
 
     def __init__(self, name: str, internal: bool = True, heat_supply: [{"supply": float, "timestamp": datetime}] = 0,
-                 price: float = 0):
+                 price: float = 0, primary_energy_factor = 1):
         EnergyConverter.__init__(self, name, internal)
         self.supply = heat_supply
         self.price = price
-        self.co2_equivalent = 0
+        self.co2_equivalent = 40
+        self.primary_energy_factor = primary_energy_factor
 
-    def get_merit(self, timestamp: datetime, internal=True) -> SupplyMerit:
+    def get_merit(self, timestamp: datetime,network_name, internal=True) -> SupplyMerit:
         supply = self.get_supply(timestamp=timestamp)
         price = self.get_price(timestamp=timestamp)
         co2_equivalent = self.co2_equivalent
-        return SupplyMerit(self.name, supply, price, co2_equivalent=co2_equivalent, internal=internal)
+        return SupplyMerit(self.name, supply, price, network_name, co2_equivalent=co2_equivalent, internal=internal,
+                           primary_energy_factor=self.primary_energy_factor)
 
     def get_supply(self, timestamp):
         if isinstance(self.supply, list):
@@ -137,7 +139,10 @@ class HeatSource(EnergyConverter):
                         0)
 
         elif isinstance(self.supply, pd.Series):
-            return self.supply[timestamp]
+            try:
+                return self.supply[timestamp]
+            except KeyError:
+                return 0
 
         else:
             return self.supply
@@ -184,9 +189,9 @@ class HeatDemand(EnergyConverter):
         self.demand = heat_demand
         self.price = price
 
-    def get_demand_merit(self, timestamp: datetime) -> DemandMerit:
+    def get_demand_merit(self, timestamp: datetime, network_name) -> DemandMerit:
         demand = self.get_demand(timestamp)
-        return DemandMerit(self.name, demand, self.price)
+        return DemandMerit(self.name, demand, self.price, network_name)
 
     def get_demand(self, timestamp: datetime = None):
         if isinstance(self.demand, list):
@@ -200,7 +205,11 @@ class HeatDemand(EnergyConverter):
             return self.demand
 
         elif isinstance(self.demand, pd.Series):
-            demand_at_timestamp = self.demand[timestamp]
+            try:
+                demand_at_timestamp = self.demand[timestamp]
+            except KeyError as ke:
+                print(ke)
+                demand_at_timestamp = 0
             return demand_at_timestamp
 
         else:
@@ -232,16 +241,27 @@ class Boiler(HeatSource):
 
     def __init__(self, name: str, internal: bool = True,
                  heat_supply: [{"supply": float, "timestamp": datetime}] = 0,
-                 fuel: Fuel = Fuel(name="Natural Gas", co2_equivalent=0, calorific_value=40),
+                 fuel: Fuel = Fuel(name="Natural Gas", co2_equivalent=270, calorific_value=40),
                  fuel_price_reference=None,
-                 efficiency=1
+                 efficiency=1,
+                 primary_energy_factor = 1.1
                  ):
         self.fuel = fuel
-        HeatSource.__init__(self, name, internal, heat_supply)
+        HeatSource.__init__(self, name, internal, heat_supply, primary_energy_factor=primary_energy_factor)
         self.efficiency = efficiency
         self.price = get_boiler_price(fuel_price_reference, self.efficiency)
         self.co2_equivalent = self.fuel.co2_equivalent / self.efficiency
 
+    def get_merit(self, timestamp: datetime, network_name, internal=True) -> SupplyMerit:
+        supply = self.get_supply(timestamp=timestamp)
+        price = self.get_price(timestamp=timestamp)
+        co2_equivalent = self.co2_equivalent
+        return SupplyMerit(self.name, supply, price,network_name, co2_equivalent=co2_equivalent, internal=internal,
+                           primary_energy_factor=self.primary_energy_factor, eff_in=self.efficiency)
+
+    def get_price(self, timestamp: datetime):
+        fuel_price = find_fuel_price(timestamp)
+        return fuel_price / self.efficiency + ((270 * 70) / 1000000)/self.efficiency # at 70€/ton ->        print()
 
 class CHP(HeatSource):
     """
@@ -252,7 +272,7 @@ class CHP(HeatSource):
     The nominal heat output can be derived from the thermal efficiency and the engine_heat and exhaust heat factors.
     If the connected heat sink is unable to take the nominal heat output, additional cooling is used. --> Usable waste heat
 
-    A CHP has 1+ Fuel inputs consisting of fuel type and usage data
+    A CHP has 1 Fuel input consisting of fuel type and usage data
     A CHP has a nominal electrical power.
     A CHP converts fuel with a thermal efficiency into thermal energy and electricity
 
@@ -269,7 +289,7 @@ class CHP(HeatSource):
                  electrical_efficiency: float = 1,
                  electricity_supply=None,
                  heat_supply=None,
-                 fuel: Fuel = Fuel(name="Natural Gas", co2_equivalent=0.247, calorific_value=40),
+                 fuel: Fuel = Fuel(name="Natural Gas", co2_equivalent=270, calorific_value=40),
                  operating_mode="thermal",
                  fuel_price_reference=None,
                  electricity_price_reference=None,
@@ -327,6 +347,7 @@ class CHP(HeatSource):
         else:
             return self.supply * split_factor
 
+
     def make_chp_price(self, fuel_price_reference, electricity_price_reference):
         """
         :return:
@@ -379,17 +400,26 @@ class CHP(HeatSource):
             fuel_enthalpy = self.electricity_supply / self.electrical_efficiency
             return fuel_enthalpy * self.thermal_efficiency
 
-    def get_merit(self, timestamp: datetime, internal=True) -> SupplyMerit:
+    def get_merit(self, timestamp: datetime,network_name, internal=True) -> SupplyMerit:
         supply = self.get_supply(timestamp=timestamp)
         price = self.get_price(timestamp=timestamp)
         co2_equivalent = self.co2_equivalent
-        if self.minimum_supply > supply:
-            return SupplyMerit(self.name, 0, price, co2_equivalent=co2_equivalent, internal=internal,
-                               is_coupled=self.coupled_supply, minimum_supply=self.minimum_supply)
-        else:
-            return SupplyMerit(self.name, supply, price, co2_equivalent=co2_equivalent, internal=internal,
-                               is_coupled=self.coupled_supply, minimum_supply=self.minimum_supply)
 
+        if self.minimum_supply > supply:
+            return SupplyMerit(self.name, 0, price, network_name, co2_equivalent=co2_equivalent, internal=internal,
+                               is_coupled=self.coupled_supply, minimum_supply=self.minimum_supply, primary_energy_factor=1.1)
+        else:
+            return SupplyMerit(self.name, supply, price, network_name, co2_equivalent=co2_equivalent, internal=internal,
+                               is_coupled=self.coupled_supply, minimum_supply=self.minimum_supply, primary_energy_factor=1.1,
+                               el_factor = self.electrical_efficiency/self.thermal_efficiency, eff_in=self.thermal_efficiency)
+
+    def get_price(self, timestamp):
+        fuel_price = find_fuel_price(timestamp)
+        electricity_price = find_electricity_price(timestamp)
+        price = fuel_price / self.thermal_efficiency - electricity_price * (self.electrical_efficiency / self.thermal_efficiency)
+        if self.coupled_supply:
+            price = price + self.coupling_waste_cost
+        return price
 
 class Cooler(EnergyConverter):
     def __init__(self, name: str, internal: bool = True, cooling_cost: float = 0,
@@ -404,7 +434,11 @@ class Cooler(EnergyConverter):
         if self.ambient:
             ambient_temperature = find_ambient_temperature(timestamp)
             electricity_price = find_electricity_price(timestamp)
-            eeg_theoretical = ambient_temperature / (ambient_temperature - cooling_temp)
+            try:
+                eeg_theoretical = ambient_temperature / (ambient_temperature - cooling_temp)
+            except ZeroDivisionError:
+                eeg_theoretical = 1000
+
             eeg = eeg_theoretical * self.efficiency
             eeg = round(eeg, 5)
             return electricity_price / eeg
@@ -419,6 +453,9 @@ class Cooler(EnergyConverter):
 def get_boiler_price(fuel_price_reference, efficiency):
     base_price = 0.08 / efficiency  # [(€/s) / kW]
     price = []
+    #find_fuel_price(timestamp=datetime.now())
+
+
     if fuel_price_reference is not None:
         for timestamp in fuel_price_reference.index:
             price.append(

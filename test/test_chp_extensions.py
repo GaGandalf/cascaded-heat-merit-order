@@ -105,32 +105,3 @@ class TestCoupledCHP(unittest.TestCase):
             price=-0.01
         )
         self.assertEqual(testing_factory.mo, [expected_1st_merit, expected_2nd_merit, expected_3rd_merit])
-
-
-class TestMinimumSupplyCHP(unittest.TestCase):
-    def testMinimumSupplyCHP(self):
-        network_name = "CHP Network"
-        thermal_efficiency = 0.5
-        electrical_efficiency = 0.25
-        heat_sources = [CHP(name="Testing CHP", heat_supply=500,
-                            electrical_efficiency=electrical_efficiency,
-                            thermal_efficiency=thermal_efficiency,
-                            minimum_supply=400
-                            )]
-
-        demand_systems = [HeatDemand(name="Testing Demand", heat_demand=500, price=0)]
-
-        network = HeatNetwork(name=network_name, operating_temperature=100,
-                              heat_sources=heat_sources,
-                              heat_demands=demand_systems)
-
-        network_mo = network.internal_merit_order()
-
-        self.assertEqual(network_mo,
-                         [
-                             Merit(name_source="Testing CHP",
-                                   name_sink="Testing Demand",
-                                   supply=500,
-                                   original_supply=500,
-                                   price=0)]
-                         )

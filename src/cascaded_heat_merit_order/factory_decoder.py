@@ -3,7 +3,7 @@ import json
 import pandas as pd
 
 from cascaded_heat_merit_order.dhs import DHS
-from cascaded_heat_merit_order.energy_converters import HeatSource, Boiler, HeatDemand
+from cascaded_heat_merit_order.energy_converters import HeatSource, Boiler, HeatDemand, CHP
 from cascaded_heat_merit_order.factory import Factory
 from cascaded_heat_merit_order.fuel import Fuel
 from cascaded_heat_merit_order.location import Location
@@ -70,8 +70,9 @@ def heat_source_dict_to_heat_source_object(heat_source: dict, reference_df: pd.D
     elif heat_source['type'] == "CHP":
         heat_supply, price = get_price_and_supply_data(heat_source)
         fuel = fuel_dict_to_fuel_object(heat_source['fuel'])
-        raise NotImplementedError
-
+        chp = CHP(name="CHP", heat_supply=heat_supply, electrical_efficiency=heat_source["electrical_efficiency"],
+                  thermal_efficiency=heat_source["thermal_efficiency"], fuel=fuel)
+        return chp
 
 def heat_demand_dict_to_heat_demand_object(heat_demand: dict, reference_df: pd.DataFrame = None) -> HeatDemand:
     demand, price = get_price_and_demand_data(heat_demand, reference_df)

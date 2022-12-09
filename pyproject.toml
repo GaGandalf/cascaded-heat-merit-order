@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cascaded_heat_merit_order"
-version = "0.7"
+version = "0.10"
 authors = [
   { name="Jan Niklas Scherff", email="jannik@scherff.eu" },
 ]

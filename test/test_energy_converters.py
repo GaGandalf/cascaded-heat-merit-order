@@ -25,7 +25,7 @@ class TestEnergyConverters(unittest.TestCase):
                              Merit(name_source="Testing Waste Heat Source",
                                    name_sink="Testing Demand",
                                    supply=500,
-                                   price=0.08)]
+                                   price=0.0989)]
                          )
 
     def testBoilerWithEfficiency(self):
@@ -43,7 +43,7 @@ class TestEnergyConverters(unittest.TestCase):
                              Merit(name_source="Testing Waste Heat Source",
                                    name_sink="Testing Demand",
                                    supply=500,
-                                   price=0.08 / 0.5)]
+                                   price=0.0989 / 0.5)]
                          )
 
     def testBoilerWithCustomFuel(self):
@@ -62,7 +62,7 @@ class TestEnergyConverters(unittest.TestCase):
                              Merit(name_source="Testing Waste Heat Source",
                                    name_sink="Testing Demand",
                                    supply=500,
-                                   price=0.08 / 0.5)]
+                                   price=0.0989 / 0.5)]
                          )
 
     def testBoilerWithFuelReferenceInternal(self):
@@ -81,7 +81,7 @@ class TestEnergyConverters(unittest.TestCase):
 
         timestamp = datetime(2018, 1, 1, 17, 0)
         network_mo_with_custom_price = network.internal_merit_order(timestamp)
-        expected_price = price_ref.GasPrice[timestamp] / boiler_efficiency
+
 
         self.assertEqual(network_mo_with_custom_price,
                          [
@@ -89,7 +89,7 @@ class TestEnergyConverters(unittest.TestCase):
                                    name_sink="Testing Demand",
                                    supply=500,
                                    original_supply=500,
-                                   price=expected_price)]
+                                   price=0.1978)]
                          )
 
     def testBoilerWithFuelReferenceMultipleTimesteps(self):
@@ -108,14 +108,13 @@ class TestEnergyConverters(unittest.TestCase):
 
         timestamp1 = datetime(2018, 1, 1, 17, 0)
         network_mo_with_custom_price = network.internal_merit_order(timestamp1)
-        expected_price = fuel_ref.GasPrice[timestamp1] / boiler_efficiency
         self.assertEqual(network_mo_with_custom_price,
                          [
                              Merit(name_source="Testing Boiler",
                                    name_sink="Testing Demand",
                                    supply=500,
                                    original_supply=500,
-                                   price=expected_price)]
+                                   price=0.1978)]
                          )
 
         timestamp2 = datetime(2018, 1, 1, 18, 0)
@@ -127,7 +126,7 @@ class TestEnergyConverters(unittest.TestCase):
                                    name_sink="Testing Demand",
                                    supply=500,
                                    original_supply=500,
-                                   price=expected_price)]
+                                   price=0.1978)]
                          )
 
     def testBasicCHP(self):
@@ -150,8 +149,6 @@ class TestEnergyConverters(unittest.TestCase):
 
         timestamp = datetime(2018, 1, 1, 17, 0)
         network_mo_with_custom_price = network.internal_merit_order(timestamp)
-        expected_price = price_ref.GasPrice[timestamp] / thermal_efficiency - price_ref.ElectricityPrice[timestamp] * \
-                         (electrical_efficiency / thermal_efficiency)
 
         self.assertEqual(network_mo_with_custom_price,
                          [
@@ -159,7 +156,7 @@ class TestEnergyConverters(unittest.TestCase):
                                    name_sink="Testing Demand",
                                    supply=500,
                                    original_supply=500,
-                                   price=expected_price)]
+                                   price=0.06)]
                          )
 
 

@@ -1,0 +1,121 @@
+{
+      "name": "Testfactory",
+      "location": {
+            "name": "factoryTestLocation",
+            "latitude": 12.01,
+            "longitude": 13.02
+      },
+      "dhs": null,
+      "networks": [
+            {
+                  "name": "CN",
+                  "operating_temperature": 293.15,
+                  "internal": true,
+                  "is_cooling_network": true,
+                  "heat_sources": [
+                        {
+                              "type": "HeatSource",
+                              "name": "Cooling Demand 1",
+                              "internal": true,
+                              "heat_supply": "heat_Cooling_Demand_1",
+                              "price": 0
+                        }
+                  ],
+                  "heat_demands": [],
+                  "cooling_cost": 0
+            },
+            {
+                  "name": "HNHT",
+                  "operating_temperature": 373.15,
+                  "internal": true,
+                  "is_cooling_network": false,
+                  "heat_sources": [
+                        {
+                              "type": "Boiler",
+                              "name": "Boiler",
+                              "internal": true,
+                              "heat_supply": 1200,
+                              "fuel": {
+                                    "name": "Natural Gas",
+                                    "co2_equivalent": 270,
+                                    "calorific_value": 40
+                              },
+                              "price": 0.08888888888888889,
+                              "efficiency": 0.9
+                        },
+                        {
+                              "type": "CHP",
+                              "name": "CHP",
+                              "internal": true,
+                              "thermal_efficiency": 0.4,
+                              "electrical_efficiency": 0.5,
+                              "electricity_supply_reference": null,
+                              "heat_supply": 1000,
+                              "fuel": {
+                                    "name": "Natural Gas",
+                                    "co2_equivalent": 270,
+                                    "calorific_value": 40
+                              },
+                              "operating_mode": "thermal",
+                              "fuel_price_reference": "fuel_price_ref_CHP",
+                              "electricity_price_reference": "electricity_price_ref_CHP",
+                              "price": null
+                        },
+                        {
+                              "type": "HeatSource",
+                              "name": "Waste Heat",
+                              "internal": true,
+                              "heat_supply": "heat_Waste_Heat",
+                              "price": 0
+                        }
+                  ],
+                  "heat_demands": [
+                        {
+                              "type": "HeatDemand",
+                              "name": "Heat Demand HNHT",
+                              "internal": true,
+                              "heat_demand": "heat_Heat_Demand_HNHT",
+                              "price": 0
+                        }
+                  ],
+                  "cooling_cost": 0
+            },
+            {
+                  "name": "HNLT",
+                  "operating_temperature": 353.15,
+                  "internal": true,
+                  "is_cooling_network": false,
+                  "heat_sources": [],
+                  "heat_demands": [
+                        {
+                              "type": "HeatDemand",
+                              "name": "Heat Demand HNLT",
+                              "internal": true,
+                              "heat_demand": "heat_Heat_Demand_HNLT",
+                              "price": 0
+                        }
+                  ],
+                  "cooling_cost": 0
+            }
+      ],
+      "network_connectors": [
+            {
+                  "name": "CN to HNLT HeatPump",
+                  "heat_sink": "HNLT",
+                  "heat_source": "CN",
+                  "max_throughput": 2000,
+                  "price": 0,
+                  "efficiency": 0.6,
+                  "type": "HeatPump"
+            },
+            {
+                  "name": "HNHT to HNLT HeatExchanger",
+                  "heat_sink": "HNLT",
+                  "heat_source": "HNHT",
+                  "max_throughput": 500,
+                  "price": 0,
+                  "efficiency": 0.95,
+                  "type": "HeatExchanger"
+            }
+      ]
+}

@@ -89,6 +89,8 @@ class Factory:
                     current_networks_cheapest_merit = network.mo[0]
                     if not cheapest_merit or cheapest_merit.price > current_networks_cheapest_merit.price:
                         cheapest_merit = current_networks_cheapest_merit
+                    elif cheapest_merit.price == current_networks_cheapest_merit.price and current_networks_cheapest_merit.supply > cheapest_merit.supply:
+                        cheapest_merit = current_networks_cheapest_merit
 
             coupled_merit_supply_system = None
 
@@ -97,7 +99,7 @@ class Factory:
                 return
 
             if cheapest_merit.supply_is_coupled:
-
+                # Create a coupled merit
                 for network in self.networks:
                     if network.heat_sources:
                         for heat_source in network.heat_sources:
@@ -203,9 +205,9 @@ class Factory:
                              initial=False)
 
     def connect_dhs(self, connection_network_name: str, connector_efficiency: float = 1,
-                    connector_max_throughput: float = 100000):
+                    connector_max_throughput: float = 10000000, bidirectional=True):
         """
-        Connect the
+        Connect the DHS to the specified network
 
         :param connector_max_throughput:
         :param connector_efficiency:
@@ -222,22 +224,24 @@ class Factory:
                 logging.info(f"No demand profile for DHS {dhs.name} found.")
                 logging.info("Using default demand of 100 MW")
                 dhs_heat_demand = [HeatDemand(name=f"{dhs.name}", price=0, heat_demand=100000)]
-            dhs_heat_sources = None
+            dhs_heat_sources = dhs.heat_sources
 
         else:
             dhs_heat_demand = dhs.heat_demands
             dhs_heat_sources = dhs.heat_sources
 
         if self.dhs.minimum_feed_in_temperature > connection_network.operating_temperature:
-            # HeatPump required,
-            # Most favorable feed in temp is the minimum feed in temp
             dhs_network = HeatNetwork(name=dhs.name,
                                       operating_temperature=dhs.minimum_feed_in_temperature,
                                       heat_sources=dhs_heat_sources,
                                       heat_demands=dhs_heat_demand,
                                       internal=False)
-            hts = HeatPump(name="DHS Heatpump", heat_sink=dhs.name, heat_source=connection_network_name,
-                           max_throughput=connector_max_throughput, efficiency=connector_efficiency)
+            hts = [HeatPump(name="DHS Heatpump", heat_sink=dhs.name, heat_source=connection_network_name,
+                           max_throughput=connector_max_throughput, efficiency=connector_efficiency)]
+            if bidirectional:
+                hts.append(HeatExchanger("DHS HeatExchanger", heat_sink=connection_network_name, heat_source=dhs.name,
+                                         max_throughput=connector_max_throughput, efficiency=0.99))
+
         else:
             # HeatExchanger required,
             # most favorable feed in temp is the maximum feed in temp
@@ -246,14 +250,17 @@ class Factory:
                                       heat_sources=dhs_heat_sources,
                                       heat_demands=dhs_heat_demand,
                                       internal=False)
-            hts = HeatExchanger(name="DHS HeatExchanger", heat_sink=dhs.name, heat_source=connection_network_name,
-                                max_throughput=connector_max_throughput, efficiency=connector_efficiency)
+            hts = [HeatExchanger(name="DHS HeatExchanger", heat_sink=dhs.name, heat_source=connection_network_name,
+                                max_throughput=connector_max_throughput, efficiency=connector_efficiency)]
+            if bidirectional:
+                hts.append(HeatPump(name="DHS Heatpump", heat_sink=dhs.name, heat_source=connection_network_name,
+                           max_throughput=connector_max_throughput, efficiency=0.5))
 
         self.networks.append(dhs_network)
         if not self.network_connectors:
-            self.network_connectors = [hts]
+            self.network_connectors = hts
         else:
-            self.network_connectors.append(hts)
+            self.network_connectors.extend(hts)
 
         self.hts = hts
 

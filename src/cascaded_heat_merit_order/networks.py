@@ -59,7 +59,7 @@ class HeatNetwork:
         dmo = []
         if self.heat_demands:
             for demand_system in self.heat_demands:
-                demand_merit = demand_system.get_demand_merit(timestamp)
+                demand_merit = demand_system.get_demand_merit(timestamp, self.name)
                 if demand_merit.demand > 0:
                     dmo.append(demand_merit)
         if self.heat_storage:
@@ -102,8 +102,12 @@ class HeatNetwork:
                             supply_merit.price = supply_merit.price - avoided_cooling_cost
                             # Multiplying the price per KW/h with the efficiency gets us the specific price in the
                             # mother network
-                            supply_merit.price = supply_merit.price / input_connection["efficiency"]
-                            supply_merit.co2_equivalent = supply_merit.co2_equivalent / input_connection["efficiency"]
+
+                            if supply_merit.price > 0:
+                                supply_merit.price = supply_merit.price / input_connection["efficiency"]
+
+
+                            supply_merit.co2_equivalent = supply_merit.co2_equivalent
 
                             # Apply additional-costs (i. e. Heat Pump electricity cost) on top, should not really
                             # be applicable for heat-exchangers though
@@ -132,9 +136,9 @@ class HeatNetwork:
                             # Adjust cost
                             supply_merit.price = apply_specific_electricity_costs(cop, supply_merit.price,
                                                                                   find_electricity_price(timestamp))
-                            supply_merit.co2_equivalent = apply_specific_electricity_co2_equivalents(
+                            """supply_merit.co2_equivalent = apply_specific_electricity_co2_equivalents(
                                 cop, supply_merit.co2_equivalent, find_electricity_co2_equivalence(timestamp)
-                            )
+                            )"""
 
                             # Adjust supply
                             supply_merit.supply = supply_merit.supply + supply_merit.supply / cop
@@ -185,9 +189,10 @@ class HeatNetwork:
                 self.mo.append(
                     Merit(name_source=supply_merit.name, name_sink=demand_merit.name,
                           supply=demand_merit.demand, price=supply_merit.price + demand_merit.price,
-                          connections=connections, original_supply=supply_at_base_network_level,
+                          primary_energy_factor=supply_merit.primary_energy_factor, connections=connections, original_supply=supply_at_base_network_level,
                           sink_internal=self.internal, source_internal=supply_merit.internal,
-                          supply_is_coupled=supply_merit.is_coupled
+                          supply_is_coupled=supply_merit.is_coupled, el_factor = supply_merit.electricity_production_factor, eff_in=supply_merit.efficiency_in,
+                          name_source_net=supply_merit.network, name_sink_net=demand_merit.network, co2_intensity=supply_merit.co2_equivalent
                           )
                 )
 
@@ -198,9 +203,9 @@ class HeatNetwork:
                 self.mo.append(
                     Merit(name_source=supply_merit.name, name_sink=demand_merit.name,
                           supply=supply_merit.supply, price=supply_merit.price + demand_merit.price,
-                          connections=supply_merit.connections, original_supply=supply_merit.original_supply,
-                          sink_internal=self.internal, source_internal=supply_merit.internal,
-                          supply_is_coupled=supply_merit.is_coupled)
+                          primary_energy_factor=supply_merit.primary_energy_factor, connections=supply_merit.connections, original_supply=supply_merit.original_supply,
+                          sink_internal=self.internal, source_internal=supply_merit.internal, el_factor = supply_merit.electricity_production_factor,eff_in=supply_merit.efficiency_in,
+                          supply_is_coupled=supply_merit.is_coupled, name_source_net=supply_merit.network, name_sink_net=demand_merit.network, co2_intensity=supply_merit.co2_equivalent)
                 )
 
             else:
@@ -209,9 +214,9 @@ class HeatNetwork:
                 self.mo.append(
                     Merit(name_source=supply_merit.name, name_sink=demand_merit.name,
                           supply=supply_merit.supply, price=supply_merit.price + demand_merit.price,
-                          connections=supply_merit.connections, original_supply=supply_merit.original_supply,
-                          sink_internal=self.internal, source_internal=supply_merit.internal,
-                          supply_is_coupled=supply_merit.is_coupled)
+                          primary_energy_factor=supply_merit.primary_energy_factor, connections=supply_merit.connections, original_supply=supply_merit.original_supply,
+                          sink_internal=self.internal, source_internal=supply_merit.internal, el_factor = supply_merit.electricity_production_factor,eff_in=supply_merit.efficiency_in,
+                          supply_is_coupled=supply_merit.is_coupled, name_source_net=supply_merit.network, name_sink_net=demand_merit.network,co2_intensity=supply_merit.co2_equivalent)
                 )
             self.match_supply_and_demand(dmo, smo)
 
@@ -257,9 +262,10 @@ def get_internal_smo(network: HeatNetwork, timestamp: datetime = datetime.now())
     internal_smo = []
     if network.heat_sources:
         for heat_source in network.heat_sources:
-            supply_merit = heat_source.get_merit(timestamp, network.internal)
-            if supply_merit.supply > 0:
-                internal_smo.append(supply_merit)
+            supply_merit = heat_source.get_merit(timestamp,network.name, network.internal)
+            if not isinstance(supply_merit.supply, pd.Series):
+                if supply_merit.supply > 0:
+                    internal_smo.append(supply_merit)
 
     if network.heat_storage:
         for heat_storage in network.heat_storage:
